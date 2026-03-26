@@ -89,7 +89,7 @@ npx @guardrail/cli init
 
 ---
 
-## 19 Built-in Rules
+## 22 Built-in Rules
 
 ### Security
 
@@ -100,6 +100,9 @@ npx @guardrail/cli init
 | Insecure CORS | `security/insecure-cors` | high | No |
 | Environment Variable Leak | `security/env-var-leak` | high | No |
 | No Rate Limiting | `security/no-rate-limiting` | info | No |
+| Unsafe Regex (ReDoS) | `security/unsafe-regex` | high | No |
+| No Eval | `security/no-eval` | critical | No |
+| No Secrets in Logs | `security/no-secrets-in-logs` | high | No |
 
 ### AI-Codegen (unique to Guardrail)
 
@@ -144,6 +147,25 @@ Add Guardrail to your CI in 3 lines:
 ```
 
 Issues appear as PR annotations with file and line context.
+
+---
+
+## Claude Code Plugin (MCP)
+
+Use Guardrail directly inside Claude Code as an MCP server:
+
+```json
+{
+  "mcpServers": {
+    "guardrail": {
+      "command": "npx",
+      "args": ["@guardrail/mcp"]
+    }
+  }
+}
+```
+
+This gives Claude Code three tools: `guardrail_scan`, `guardrail_fix`, and `guardrail_list_rules`.
 
 ---
 
@@ -210,9 +232,10 @@ Then in `.guardrailrc.json`:
 ```
 packages/
   core/       Rule engine, Babel AST parser, file discovery, caching
-  rules/      19 built-in rules across 4 categories
+  rules/      22 built-in rules across 4 categories
   fixer/      AST-based auto-fix engine with unified diff output
   cli/        CLI with scan, fix, watch, init commands
+  mcp/        Model Context Protocol server (Claude Code plugin)
 ```
 
 Pipeline: File Discovery -> Babel AST Parsing -> Rule Engine -> Reporting/Fixing
@@ -226,7 +249,7 @@ git clone https://github.com/Manavarya09/Guardrail.git
 cd Guardrail
 npm install
 npm run build
-npm test          # 79 tests
+npm test          # 88 tests
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the rule authoring guide.

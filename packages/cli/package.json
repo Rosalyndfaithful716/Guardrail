@@ -1,20 +1,33 @@
 {
   "name": "@guardrail/cli",
   "version": "0.1.0",
-  "description": "CLI interface for Guardrail code scanner",
+  "description": "CLI for Guardrail — scan and fix AI-generated code for security, performance, and quality issues",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "guardrail": "dist/index.js"
   },
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Manavarya09/Guardrail.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/Manavarya09/Guardrail",
+  "bugs": "https://github.com/Manavarya09/Guardrail/issues",
+  "keywords": ["guardrail", "cli", "security", "ai-code", "static-analysis", "auto-fix"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "tsx src/index.ts"
+    "dev": "tsx src/index.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail/core": "*",
-    "@guardrail/fixer": "*",
-    "@guardrail/rules": "*",
+    "@guardrail/core": "^0.1.0",
+    "@guardrail/fixer": "^0.1.0",
+    "@guardrail/rules": "^0.1.0",
     "chokidar": "^5.0.0",
     "commander": "^12.0.0"
   },

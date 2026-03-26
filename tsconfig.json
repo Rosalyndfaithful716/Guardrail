@@ -14,10 +14,13 @@
     "moduleResolution": "node",
     "composite": true
   },
+  "exclude": ["website", "node_modules"],
   "references": [
     { "path": "packages/core" },
     { "path": "packages/rules" },
     { "path": "packages/fixer" },
-    { "path": "packages/cli" }
-  ]
+    { "path": "packages/cli" },
+    { "path": "packages/mcp" }
+  ],
+  "files": []
 }

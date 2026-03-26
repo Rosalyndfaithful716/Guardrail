@@ -1,9 +1,11 @@
 {
-  "name": "@guardrail/core",
+  "name": "@guardrail/mcp",
   "version": "0.1.0",
-  "description": "Core rule engine, types, and utilities for Guardrail",
+  "description": "Model Context Protocol (MCP) server for Guardrail — use as a Claude Code plugin",
   "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "bin": {
+    "guardrail-mcp": "dist/index.js"
+  },
   "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
@@ -11,24 +13,20 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/Manavarya09/Guardrail.git",
-    "directory": "packages/core"
+    "directory": "packages/mcp"
   },
   "homepage": "https://github.com/Manavarya09/Guardrail",
   "bugs": "https://github.com/Manavarya09/Guardrail/issues",
-  "keywords": ["guardrail", "static-analysis", "ast", "rule-engine", "code-scanner"],
+  "keywords": ["guardrail", "mcp", "claude", "claude-code", "model-context-protocol"],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@babel/parser": "^7.23.6",
-    "@babel/traverse": "^7.23.6",
-    "@babel/types": "^7.23.6",
-    "cosmiconfig": "^9.0.1",
-    "fast-glob": "^3.3.2"
-  },
-  "devDependencies": {
-    "@types/babel__traverse": "^7.20.4"
+    "@guardrail/core": "*",
+    "@guardrail/rules": "*",
+    "@guardrail/fixer": "*",
+    "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "license": "MIT"
 }

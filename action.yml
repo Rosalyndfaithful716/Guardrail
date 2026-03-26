@@ -1,5 +1,6 @@
 name: 'Guardrail Code Scanner'
-description: 'Scan code for security issues, performance problems, and AI-generated code anti-patterns'
+author: 'Manavarya09'
+description: 'Scan code for security issues, performance problems, and AI-generated code anti-patterns. 19 built-in rules with AST-based auto-fix.'
 branding:
   icon: 'shield'
   color: 'blue'
@@ -14,9 +15,31 @@ inputs:
     required: false
     default: 'warning'
   fail-on:
-    description: 'Severity level that causes the action to fail (critical, high, warning, info)'
+    description: 'Severity level that causes the action to fail (critical, high, warning, info, none)'
     required: false
     default: 'high'
+  rules:
+    description: 'Comma-separated list of rule IDs to run (empty = all rules)'
+    required: false
+    default: ''
+  report:
+    description: 'Generate report format (none, html)'
+    required: false
+    default: 'none'
+
+outputs:
+  total-issues:
+    description: 'Total number of issues found'
+    value: ${{ steps.scan.outputs.total }}
+  critical-count:
+    description: 'Number of critical severity issues'
+    value: ${{ steps.scan.outputs.critical }}
+  high-count:
+    description: 'Number of high severity issues'
+    value: ${{ steps.scan.outputs.high }}
+  has-failures:
+    description: 'Whether issues at or above fail-on threshold were found'
+    value: ${{ steps.scan.outputs.has_failures }}
 
 runs:
   using: 'composite'
@@ -28,40 +51,94 @@ runs:
 
     - name: Install Guardrail
       shell: bash
-      run: npm install -g @guardrail/cli
+      run: npm install -g @guardrail/cli@latest 2>/dev/null || npx @guardrail/cli --version
 
     - name: Run Guardrail Scan
+      id: scan
       shell: bash
       run: |
+        RULES_FLAG=""
+        if [ -n "${{ inputs.rules }}" ]; then
+          RULES_FLAG="--rules ${{ inputs.rules }}"
+        fi
+
         guardrail scan ${{ inputs.target }} \
           --severity ${{ inputs.severity }} \
-          --json > guardrail-results.json 2>&1 || true
+          $RULES_FLAG \
+          --json > guardrail-results.json 2>/dev/null || true
 
-    - name: Process Results
-      shell: bash
-      run: |
         node -e "
         const fs = require('fs');
-        const results = JSON.parse(fs.readFileSync('guardrail-results.json', 'utf8'));
+        let raw = fs.readFileSync('guardrail-results.json', 'utf8');
+        // Strip any non-JSON preamble
+        const jsonStart = raw.indexOf('{');
+        if (jsonStart > 0) raw = raw.substring(jsonStart);
+        const results = JSON.parse(raw);
         const levels = { critical: 0, high: 1, warning: 2, info: 3 };
-        const threshold = levels['${{ inputs.fail-on }}'] ?? 1;
+        const failOn = '${{ inputs.fail-on }}';
+        const threshold = failOn === 'none' ? -1 : (levels[failOn] ?? 1);
 
+        // Output annotations
         for (const result of results.results || []) {
           for (const v of result.violations || []) {
-            const file = v.location.file;
+            const file = v.location.file.replace(process.cwd() + '/', '');
             const line = v.location.line;
-            const level = levels[v.severity] <= 1 ? 'error' : 'warning';
-            console.log('::' + level + ' file=' + file + ',line=' + line + '::' + v.message + ' [' + v.ruleId + ']');
+            const sev = v.severity;
+            const level = levels[sev] <= 1 ? 'error' : 'warning';
+            console.log('::' + level + ' file=' + file + ',line=' + line + ',title=Guardrail [' + v.ruleId + ']::' + v.message);
           }
         }
 
-        const hasFailures = Object.entries(results.bySeverity || {}).some(
+        // Summary
+        const total = results.totalViolations || 0;
+        const critical = results.bySeverity?.critical || 0;
+        const high = results.bySeverity?.high || 0;
+        const warn = results.bySeverity?.warning || 0;
+        const info = results.bySeverity?.info || 0;
+
+        const core = require('@actions/core') || { setOutput: () => {} };
+        try {
+          const c = require('@actions/core');
+          c.setOutput('total', total);
+          c.setOutput('critical', critical);
+          c.setOutput('high', high);
+        } catch(e) {}
+
+        // Write outputs for composite action
+        const outputFile = process.env.GITHUB_OUTPUT;
+        if (outputFile) {
+          fs.appendFileSync(outputFile, 'total=' + total + '\n');
+          fs.appendFileSync(outputFile, 'critical=' + critical + '\n');
+          fs.appendFileSync(outputFile, 'high=' + high + '\n');
+        }
+
+        // Summary output
+        console.log('');
+        console.log('Guardrail: ' + total + ' issues (' + critical + ' critical, ' + high + ' high, ' + warn + ' warning, ' + info + ' info)');
+
+        const hasFailures = threshold >= 0 && Object.entries(results.bySeverity || {}).some(
           ([sev, count]) => count > 0 && levels[sev] <= threshold
         );
 
+        if (outputFile) {
+          fs.appendFileSync(outputFile, 'has_failures=' + hasFailures + '\n');
+        }
+
         if (hasFailures) {
-          console.log('');
-          console.log('Guardrail found issues at or above the \"${{ inputs.fail-on }}\" severity threshold.');
+          console.log('Issues found at or above \"' + failOn + '\" severity threshold.');
           process.exit(1);
         }
         "
+
+    - name: Generate HTML Report
+      if: inputs.report == 'html'
+      shell: bash
+      run: |
+        guardrail scan ${{ inputs.target }} --severity ${{ inputs.severity }} --report html || true
+
+    - name: Upload HTML Report
+      if: inputs.report == 'html'
+      uses: actions/upload-artifact@v4
+      with:
+        name: guardrail-report
+        path: guardrail-report.html

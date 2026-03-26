@@ -4,11 +4,24 @@
   "description": "AST-based auto-fix engine for Guardrail",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": ["dist", "README.md"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Manavarya09/Guardrail.git",
+    "directory": "packages/fixer"
+  },
+  "homepage": "https://github.com/Manavarya09/Guardrail",
+  "bugs": "https://github.com/Manavarya09/Guardrail/issues",
+  "keywords": ["guardrail", "auto-fix", "ast", "code-fixer"],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail/core": "*",
+    "@guardrail/core": "^0.1.0",
     "@babel/parser": "^7.23.6",
     "@babel/traverse": "^7.23.6",
     "@babel/generator": "^7.23.6",

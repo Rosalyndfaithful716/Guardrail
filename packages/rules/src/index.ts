@@ -6,6 +6,9 @@ import sqlInjectionRule from './sql-injection.js';
 import insecureCorsRule from './insecure-cors.js';
 import envVarLeakRule from './env-var-leak.js';
 import noRateLimitingRule from './no-rate-limiting.js';
+import unsafeRegexRule from './unsafe-regex.js';
+import noEvalRule from './no-eval.js';
+import noSecretsInLogsRule from './no-secrets-in-logs.js';
 
 // Quality
 import deadCodeRule from './dead-code.js';
@@ -34,6 +37,9 @@ export const builtinRules: Rule[] = [
   insecureCorsRule,
   envVarLeakRule,
   noRateLimitingRule,
+  unsafeRegexRule,
+  noEvalRule,
+  noSecretsInLogsRule,
 
   // Quality
   deadCodeRule,
@@ -76,4 +82,7 @@ export {
   fetchWithoutErrorHandlingRule,
   promiseWithoutCatchRule,
   magicNumbersRule,
+  unsafeRegexRule,
+  noEvalRule,
+  noSecretsInLogsRule,
 };

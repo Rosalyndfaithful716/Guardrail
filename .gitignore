@@ -6,3 +6,13 @@ dist/
 coverage/
 *.log
 guardrail-report.html
+vitest.config.js
+vitest.config.js.map
+vitest.config.d.ts
+vitest.config.d.ts.map
+website/**/*.js
+website/**/*.js.map
+website/**/*.d.ts
+website/**/*.d.ts.map
+!website/next.config.ts
+!website/postcss.config.mjs

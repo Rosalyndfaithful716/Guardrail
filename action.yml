@@ -1,6 +1,6 @@
 name: 'Guardrail Code Scanner'
 author: 'Manavarya09'
-description: 'Scan code for security issues, performance problems, and AI-generated code anti-patterns. 19 built-in rules with AST-based auto-fix.'
+description: 'Scan and fix AI-generated code for security, performance, and quality issues'
 branding:
   icon: 'shield'
   color: 'blue'

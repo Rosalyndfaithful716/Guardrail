@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import { scanCommand } from './commands/scan.js';
 import { fixCommand } from './commands/fix.js';
 import { initCommand } from './commands/init.js';
+import { watchCommand } from './commands/watch.js';
 
 const program = new Command();
 
@@ -24,6 +25,7 @@ program
     'info',
   )
   .option('--json', 'Output results as JSON')
+  .option('--report <format>', 'Generate a report (html)')
   .option(
     '--rules <rules>',
     'Comma-separated list of rule IDs to run',
@@ -50,5 +52,16 @@ program
   .command('init')
   .description('Initialize a .guardrailrc.json config file')
   .action(initCommand);
+
+program
+  .command('watch')
+  .description('Watch for file changes and scan in real-time')
+  .argument('[target]', 'Target directory to watch', '.')
+  .option(
+    '-s, --severity <level>',
+    'Minimum severity to report',
+    'info',
+  )
+  .action(watchCommand);
 
 program.parse();

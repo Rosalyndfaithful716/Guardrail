@@ -1,13 +1,15 @@
-import { resolve } from 'path';
+import { resolve, join } from 'path';
 import { GuardrailEngine, loadConfig, mergeConfigs } from '@guardrail/core';
 import type { Severity } from '@guardrail/core';
 import { builtinRules } from '@guardrail/rules';
 import { formatSummary } from '../formatter.js';
+import { generateHtmlReport } from '../reporters/html-reporter.js';
 import * as c from '../colors.js';
 
 interface ScanOptions {
   severity?: string;
   json?: boolean;
+  report?: string;
   rules?: string;
 }
 
@@ -25,7 +27,6 @@ export async function scanCommand(
     console.log('');
   }
 
-  // Load config file, merge with CLI options
   const fileConfig = loadConfig(targetPath);
   const config = mergeConfigs(fileConfig, {
     severityThreshold: (options.severity as Severity) ?? undefined,
@@ -33,7 +34,6 @@ export async function scanCommand(
 
   const engine = new GuardrailEngine(config);
 
-  // Register rules
   let rules = builtinRules;
   if (options.rules) {
     const ruleIds = new Set(options.rules.split(',').map((r) => r.trim()));
@@ -52,7 +52,14 @@ export async function scanCommand(
 
   console.log(formatSummary(summary, cwd, elapsed));
 
-  // Exit with non-zero code if critical/high issues found
+  // Generate HTML report if requested
+  if (options.report === 'html') {
+    const reportPath = join(cwd, 'guardrail-report.html');
+    generateHtmlReport(summary, cwd, reportPath);
+    console.log(c.green(`  HTML report saved to ${reportPath}`));
+    console.log('');
+  }
+
   if (summary.bySeverity.critical > 0 || summary.bySeverity.high > 0) {
     process.exitCode = 1;
   }

@@ -13,8 +13,9 @@
   },
   "dependencies": {
     "@guardrail/core": "*",
-    "@guardrail/rules": "*",
     "@guardrail/fixer": "*",
+    "@guardrail/rules": "*",
+    "chokidar": "^5.0.0",
     "commander": "^12.0.0"
   },
   "license": "MIT"

@@ -9,10 +9,41 @@ import type { Rule, RuleContext, Violation } from '@guardrail/core';
  *
  *   2. await inside a loop body (should use Promise.all)
  *      for (const item of items) { await fetch(item); }
- *
- *   3. DOM/expensive lookups inside loops
- *      for (...) { document.getElementById(...) }
  */
+
+function checkAwaitInLoop(
+  path: any,
+  filePath: string,
+  violations: Violation[],
+) {
+  path.traverse({
+    AwaitExpression(innerPath: any) {
+      let current = innerPath.parentPath;
+      while (current && current !== path) {
+        if (
+          current.isFunctionDeclaration() ||
+          current.isFunctionExpression() ||
+          current.isArrowFunctionExpression()
+        ) {
+          return;
+        }
+        current = current.parentPath;
+      }
+
+      violations.push({
+        ruleId: 'performance/inefficient-loop',
+        severity: 'warning',
+        message:
+          'Sequential await inside loop. Consider using Promise.all() for concurrent execution.',
+        location: {
+          file: filePath,
+          line: innerPath.node.loc?.start.line ?? 0,
+          column: innerPath.node.loc?.start.column ?? 0,
+        },
+      });
+    },
+  });
+}
 
 const inefficientLoopRule: Rule = {
   id: 'performance/inefficient-loop',
@@ -27,8 +58,8 @@ const inefficientLoopRule: Rule = {
     const { ast, filePath } = context;
 
     traverse(ast, {
-      // Pattern 1: for (i = 0; i < arr.length; i++)
       ForStatement(path) {
+        // Pattern 1: uncached arr.length
         const test = path.node.test;
         if (
           test?.type === 'BinaryExpression' &&
@@ -59,44 +90,29 @@ const inefficientLoopRule: Rule = {
                   column: path.node.loc?.end.column ?? 0,
                 },
               },
-              replacement: '', // Fixer engine handles the actual transformation
+              replacement: '',
             },
           });
         }
+
+        // Pattern 2: await inside this for loop
+        checkAwaitInLoop(path, filePath, violations);
       },
 
-      // Pattern 2: await inside for/for-of/for-in/while loops
-      'ForStatement|ForOfStatement|ForInStatement|WhileStatement|DoWhileStatement'(
-        path,
-      ) {
-        path.traverse({
-          AwaitExpression(innerPath) {
-            // Make sure the await is directly inside this loop, not in a nested function
-            let current = innerPath.parentPath;
-            while (current && current !== path) {
-              if (
-                current.isFunctionDeclaration() ||
-                current.isFunctionExpression() ||
-                current.isArrowFunctionExpression()
-              ) {
-                return; // await is in a nested function, not directly in the loop
-              }
-              current = current.parentPath as typeof current;
-            }
+      ForOfStatement(path) {
+        checkAwaitInLoop(path, filePath, violations);
+      },
 
-            violations.push({
-              ruleId: 'performance/inefficient-loop',
-              severity: 'warning',
-              message:
-                'Sequential await inside loop. Consider using Promise.all() for concurrent execution.',
-              location: {
-                file: filePath,
-                line: innerPath.node.loc?.start.line ?? 0,
-                column: innerPath.node.loc?.start.column ?? 0,
-              },
-            });
-          },
-        });
+      ForInStatement(path) {
+        checkAwaitInLoop(path, filePath, violations);
+      },
+
+      WhileStatement(path) {
+        checkAwaitInLoop(path, filePath, violations);
+      },
+
+      DoWhileStatement(path) {
+        checkAwaitInLoop(path, filePath, violations);
       },
     });
 

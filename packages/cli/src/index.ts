@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { scanCommand } from './commands/scan.js';
 import { fixCommand } from './commands/fix.js';
+import { initCommand } from './commands/init.js';
 
 const program = new Command();
 
@@ -44,5 +45,10 @@ program
     'Comma-separated list of rule IDs to fix',
   )
   .action(fixCommand);
+
+program
+  .command('init')
+  .description('Initialize a .guardrailrc.json config file')
+  .action(initCommand);
 
 program.parse();

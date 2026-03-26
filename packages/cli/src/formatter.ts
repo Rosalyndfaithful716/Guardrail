@@ -38,7 +38,7 @@ export function formatFileResult(result: ScanResult, cwd: string): string {
   return lines.join('\n');
 }
 
-export function formatSummary(summary: ScanSummary, cwd: string): string {
+export function formatSummary(summary: ScanSummary, cwd: string, elapsed?: string): string {
   const sections: string[] = [];
 
   // File results
@@ -72,7 +72,8 @@ export function formatSummary(summary: ScanSummary, cwd: string): string {
   sections.push(
     c.bold(
       `${summary.totalViolations === 0 ? c.green('No issues found!') : `Found ${summary.totalViolations} issues`}` +
-        ` in ${summary.totalFiles} files`,
+        ` in ${summary.totalFiles} files` +
+        (elapsed ? c.dim(` (${elapsed}s)`) : ''),
     ),
   );
 

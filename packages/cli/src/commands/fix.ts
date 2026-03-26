@@ -1,5 +1,5 @@
 import { resolve } from 'path';
-import { GuardrailEngine } from '@guardrail/core';
+import { GuardrailEngine, loadConfig, mergeConfigs } from '@guardrail/core';
 import type { Severity } from '@guardrail/core';
 import { builtinRules } from '@guardrail/rules';
 import { FixerEngine } from '@guardrail/fixer';
@@ -27,9 +27,12 @@ export async function fixCommand(
   console.log(c.dim(`  Target: ${targetPath}`));
   console.log('');
 
-  const engine = new GuardrailEngine({
-    severityThreshold: (options.severity as Severity) ?? 'info',
+  const fileConfig = loadConfig(targetPath);
+  const config = mergeConfigs(fileConfig, {
+    severityThreshold: (options.severity as Severity) ?? undefined,
   });
+
+  const engine = new GuardrailEngine(config);
 
   let rules = builtinRules;
   if (options.rules) {

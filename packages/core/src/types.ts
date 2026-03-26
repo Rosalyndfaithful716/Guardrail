@@ -59,11 +59,17 @@ export interface ScanSummary {
   results: ScanResult[];
 }
 
+export interface GuardrailPlugin {
+  name: string;
+  rules: Rule[];
+}
+
 export interface GuardrailConfig {
   include: string[];
   exclude: string[];
   rules: Record<string, boolean | { enabled: boolean; severity?: Severity }>;
   severityThreshold?: Severity;
+  plugins?: string[];
 }
 
 export const DEFAULT_CONFIG: GuardrailConfig = {

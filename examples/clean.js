@@ -26,14 +26,19 @@ function processData(data) {
 function processItems(items) {
   const len = items.length;
   for (let i = 0; i < len; i++) {
-    console.log(items[i]);
+    process.stdout.write(items[i] + '\n');
   }
 }
 
 // Good: Concurrent async operations
 async function fetchAll(urls) {
-  const results = await Promise.all(urls.map((url) => fetch(url)));
-  return results;
+  try {
+    const results = await Promise.all(urls.map((url) => fetch(url)));
+    return results;
+  } catch (error) {
+    console.error("Fetch failed:", error.message);
+    return [];
+  }
 }
 
 export { getUser, processData, processItems, fetchAll };

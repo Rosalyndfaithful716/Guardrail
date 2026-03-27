@@ -1,7 +1,5 @@
-import { resolve, join } from 'path';
-import { execSync } from 'child_process';
-import { existsSync } from 'fs';
-import { GuardrailEngine, loadConfig, mergeConfigs } from '@guardrail-ai/core';
+import { join } from 'path';
+import { GuardrailEngine, loadConfig, mergeConfigs, getChangedFiles } from '@guardrail-ai/core';
 import type { Severity } from '@guardrail-ai/core';
 import { builtinRules } from '@guardrail-ai/rules';
 import { formatSummary } from '../formatter.js';
@@ -17,50 +15,6 @@ interface DiffOptions {
   report?: string;
   rules?: string;
   base?: string;
-}
-
-function getChangedFiles(cwd: string, base: string): string[] {
-  try {
-    // Get files changed compared to base branch/commit
-    const output = execSync(`git diff --name-only --diff-filter=ACMR ${base}`, {
-      cwd,
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    return output
-      .trim()
-      .split('\n')
-      .filter((f) => f && /\.(js|jsx|ts|tsx)$/.test(f))
-      .map((f) => resolve(cwd, f))
-      .filter((f) => existsSync(f));
-  } catch {
-    // Fallback: get staged + unstaged changes
-    try {
-      const staged = execSync('git diff --cached --name-only --diff-filter=ACMR', {
-        cwd,
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-      const unstaged = execSync('git diff --name-only --diff-filter=ACMR', {
-        cwd,
-        encoding: 'utf-8',
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      const all = new Set([
-        ...staged.trim().split('\n'),
-        ...unstaged.trim().split('\n'),
-      ]);
-
-      return [...all]
-        .filter((f) => f && /\.(js|jsx|ts|tsx)$/.test(f))
-        .map((f) => resolve(cwd, f))
-        .filter((f) => existsSync(f));
-    } catch {
-      return [];
-    }
-  }
 }
 
 export async function diffCommand(

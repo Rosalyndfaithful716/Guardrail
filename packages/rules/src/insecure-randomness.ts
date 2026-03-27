@@ -69,13 +69,14 @@ const insecureRandomnessRule: Rule = {
           current = current.parentPath;
         }
 
-        // Always flag — Math.random is never secure, but bump severity for sensitive contexts
+        // Only flag security-sensitive contexts — not UI/animation usage
+        if (!isSensitive) return;
+
         violations.push({
           ruleId: 'security/insecure-randomness',
-          severity: isSensitive ? 'high' : 'warning',
-          message: isSensitive
-            ? 'Math.random() is not cryptographically secure. Use crypto.randomUUID() or crypto.getRandomValues() for security-sensitive values.'
-            : 'Math.random() is not cryptographically secure. Consider crypto.getRandomValues() if used for anything security-related.',
+          severity: 'high',
+          message:
+            'Math.random() is not cryptographically secure. Use crypto.randomUUID() or crypto.getRandomValues() for security-sensitive values.',
           location: {
             file: filePath,
             line: path.node.loc?.start.line ?? 0,

@@ -1,12 +1,15 @@
 import { resolve, join } from 'path';
+import { execSync } from 'child_process';
 import { GuardrailEngine, loadConfig, mergeConfigs, discoverFiles } from '@guardrail-ai/core';
-import type { Severity } from '@guardrail-ai/core';
+import type { Severity, ScanSummary } from '@guardrail-ai/core';
 import { builtinRules } from '@guardrail-ai/rules';
-import { formatSummary } from '../formatter.js';
+import { FixerEngine } from '@guardrail-ai/fixer';
+import { formatSummary, formatDiff } from '../formatter.js';
 import { generateHtmlReport } from '../reporters/html-reporter.js';
 import { generateMdReport } from '../reporters/md-reporter.js';
 import { generateSarifReport } from '../reporters/sarif-reporter.js';
 import { loadBaseline, filterBaseline } from './baseline.js';
+import { showMenu } from '../interactive.js';
 import * as c from '../colors.js';
 import { printBanner, printScanHeader } from '../banner.js';
 
@@ -49,7 +52,7 @@ export async function scanCommand(
   let summary = await engine.scan(targetPath);
   const elapsed = ((performance.now() - start) / 1000).toFixed(2);
 
-  // Apply baseline filtering if baseline exists
+  // Apply baseline filtering
   const baseline = loadBaseline(cwd);
   let suppressed = 0;
   if (baseline) {
@@ -65,38 +68,131 @@ export async function scanCommand(
 
   console.log(formatSummary(summary, cwd, elapsed));
 
-  // Show baseline info
   if (suppressed > 0) {
     console.log(c.dim(`  ${suppressed} baseline issues suppressed. Run ${c.bold('guardrail baseline status')} for details.`));
     console.log('');
   }
 
-  // Generate reports — supports comma-separated: --report html,md,sarif
+  // Generate reports if --report flag passed
   if (options.report) {
-    const formats = options.report.split(',').map((f) => f.trim());
-
-    for (const fmt of formats) {
-      if (fmt === 'html') {
-        const reportPath = join(cwd, 'guardrail-report.html');
-        generateHtmlReport(summary, cwd, reportPath);
-        console.log(c.green(`  ✓ HTML report: ${reportPath}`));
-      }
-      if (fmt === 'md') {
-        const reportPath = join(cwd, 'GUARDRAIL-AUDIT.md');
-        generateMdReport(summary, cwd, reportPath);
-        console.log(c.green(`  ✓ Audit report: ${reportPath}`));
-        console.log(c.dim(`    Feed this file to Claude/ChatGPT to fix all issues.`));
-      }
-      if (fmt === 'sarif') {
-        const reportPath = join(cwd, 'guardrail.sarif');
-        generateSarifReport(summary, cwd, reportPath);
-        console.log(c.green(`  ✓ SARIF report: ${reportPath}`));
-      }
-    }
-    console.log('');
+    generateReports(options.report, summary, cwd);
   }
 
   if (summary.bySeverity.critical > 0 || summary.bySeverity.high > 0) {
     process.exitCode = 1;
   }
+
+  // Interactive menu — only in TTY and when there are issues
+  if (process.stdout.isTTY && summary.totalViolations > 0 && !options.report) {
+    const fixableCount = summary.results.reduce(
+      (acc, r) => acc + r.violations.filter((v) => v.fix).length,
+      0,
+    );
+
+    const menuOptions = [];
+
+    if (fixableCount > 0) {
+      menuOptions.push({
+        label: `Auto-fix ${fixableCount} issues`,
+        hint: 'applies safe AST transforms',
+        action: async () => {
+          const fixer = new FixerEngine();
+          let totalFixed = 0;
+          for (const result of summary.results) {
+            const fixable = result.violations.filter((v) => v.fix);
+            if (fixable.length === 0) continue;
+            const fixResult = await fixer.applyFixes(result.filePath, result.violations, true);
+            if (fixResult.applied > 0) {
+              totalFixed += fixResult.applied;
+              const rel = result.filePath.replace(cwd + '/', '');
+              console.log(`  ${c.brightGreen('✓')} ${c.white(rel)} — ${fixResult.applied} fixed`);
+              if (fixResult.diff) {
+                console.log(formatDiff(fixResult.diff));
+              }
+            }
+          }
+          console.log('');
+          console.log(`  ${c.brightGreen(c.bold(`${totalFixed} issues fixed.`))}`);
+          console.log('');
+        },
+      });
+    }
+
+    menuOptions.push({
+      label: 'Generate AI fix guide (Markdown)',
+      hint: 'paste into Claude/ChatGPT to fix everything',
+      action: () => {
+        const p = join(cwd, 'GUARDRAIL-AUDIT.md');
+        generateMdReport(summary, cwd, p);
+        console.log(`  ${c.brightGreen('✓')} Saved: ${c.white(p)}`);
+        console.log(`  ${c.dim('Paste this file into your AI assistant to fix all issues.')}`);
+        console.log('');
+      },
+    });
+
+    menuOptions.push({
+      label: 'Generate HTML report',
+      hint: 'visual report you can share',
+      action: () => {
+        const p = join(cwd, 'guardrail-report.html');
+        generateHtmlReport(summary, cwd, p);
+        console.log(`  ${c.brightGreen('✓')} Saved: ${c.white(p)}`);
+        console.log('');
+      },
+    });
+
+    menuOptions.push({
+      label: 'Generate SARIF report',
+      hint: 'for GitHub Code Scanning',
+      action: () => {
+        const p = join(cwd, 'guardrail.sarif');
+        generateSarifReport(summary, cwd, p);
+        console.log(`  ${c.brightGreen('✓')} Saved: ${c.white(p)}`);
+        console.log('');
+      },
+    });
+
+    menuOptions.push({
+      label: 'Create baseline (suppress current issues)',
+      hint: 'adopt guardrail gradually',
+      action: async () => {
+        const { baselineCommand } = await import('./baseline.js');
+        await baselineCommand('create', { severity: options.severity });
+      },
+    });
+
+    menuOptions.push({
+      label: 'Install pre-commit hook',
+      hint: 'block bad code from being committed',
+      action: async () => {
+        const { hookCommand } = await import('./hook.js');
+        await hookCommand('install');
+      },
+    });
+
+    await showMenu(menuOptions);
+  }
+}
+
+function generateReports(report: string, summary: ScanSummary, cwd: string): void {
+  const formats = report.split(',').map((f) => f.trim());
+  for (const fmt of formats) {
+    if (fmt === 'html') {
+      const p = join(cwd, 'guardrail-report.html');
+      generateHtmlReport(summary, cwd, p);
+      console.log(c.green(`  ✓ HTML report: ${p}`));
+    }
+    if (fmt === 'md') {
+      const p = join(cwd, 'GUARDRAIL-AUDIT.md');
+      generateMdReport(summary, cwd, p);
+      console.log(c.green(`  ✓ Audit report: ${p}`));
+      console.log(c.dim(`    Feed this file to Claude/ChatGPT to fix all issues.`));
+    }
+    if (fmt === 'sarif') {
+      const p = join(cwd, 'guardrail.sarif');
+      generateSarifReport(summary, cwd, p);
+      console.log(c.green(`  ✓ SARIF report: ${p}`));
+    }
+  }
+  console.log('');
 }

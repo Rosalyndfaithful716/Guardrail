@@ -38,4 +38,14 @@ describe('security/jwt-misuse', () => {
     const v = detect(`jwt.verify(token, process.env.JWT_SECRET);`);
     expect(v).toHaveLength(0);
   });
+
+  it('ignores TextDecoder.decode() — not JWT', () => {
+    const v = detect(`const text = decoder.decode(value, { stream: true });`);
+    expect(v).toHaveLength(0);
+  });
+
+  it('ignores response.decode() — not JWT', () => {
+    const v = detect(`const data = response.decode();`);
+    expect(v).toHaveLength(0);
+  });
 });

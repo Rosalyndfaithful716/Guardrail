@@ -137,14 +137,22 @@ export function formatFileResult(result: ScanResult, cwd: string): string {
 // ─── Health score ──────────────────────────────────────────────────
 
 function calcScore(summary: ScanSummary): number {
-  return Math.max(
-    0,
-    100 -
-      summary.bySeverity.critical * 15 -
-      summary.bySeverity.high * 8 -
-      summary.bySeverity.warning * 3 -
-      summary.bySeverity.info * 1,
-  );
+  if (summary.totalViolations === 0) return 100;
+
+  // Scale penalty by number of files — a 100-file project with 10 warnings
+  // should score better than a 2-file project with 10 warnings
+  const fileScale = Math.max(1, Math.sqrt(summary.totalFiles));
+
+  const rawPenalty =
+    summary.bySeverity.critical * 20 +
+    summary.bySeverity.high * 10 +
+    summary.bySeverity.warning * 2 +
+    summary.bySeverity.info * 0.5;
+
+  // Normalize: penalty per file, capped at 100
+  const normalizedPenalty = Math.min(100, rawPenalty / fileScale);
+
+  return Math.max(0, Math.round(100 - normalizedPenalty));
 }
 
 function scoreBar(score: number): string {

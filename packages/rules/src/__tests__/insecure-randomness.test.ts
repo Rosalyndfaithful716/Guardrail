@@ -20,14 +20,13 @@ describe('security/insecure-randomness', () => {
     expect(v[0].severity).toBe('high');
   });
 
-  it('detects general Math.random() usage with warning', () => {
+  it('ignores Math.random() in non-sensitive context', () => {
     const v = detect(`const x = Math.random();`);
-    expect(v).toHaveLength(1);
-    expect(v[0].severity).toBe('warning');
+    expect(v).toHaveLength(0);
   });
 
-  it('flags Math.random() even in non-sensitive context', () => {
+  it('ignores Math.random() for UI/animation usage', () => {
     const v = detect(`const color = Math.random() * 255;`);
-    expect(v).toHaveLength(1);
+    expect(v).toHaveLength(0);
   });
 });

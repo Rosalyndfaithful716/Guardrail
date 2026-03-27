@@ -33,8 +33,17 @@ const jwtMisuseRule: Rule = {
         const method = callee.property.name;
         const args = path.node.arguments;
 
+        // Only match jwt-like objects, not TextDecoder, VideoDecoder, etc.
+        const objName = callee.object.type === 'Identifier' ? callee.object.name.toLowerCase() : '';
+        const NON_JWT_OBJECTS = new Set(['decoder', 'textdecoder', 'audiodecoder', 'videodecoder', 'reader', 'response', 'buffer', 'stream']);
+        if (NON_JWT_OBJECTS.has(objName)) return;
+
         // jwt.decode() — often misused as verification
         if (method === 'decode') {
+          // Only flag if the object looks like a JWT library (jwt, jsonwebtoken, jwtLib, etc.)
+          const isJwtLike = objName === '' || objName.includes('jwt') || objName.includes('token') || objName === 'jose';
+          if (!isJwtLike) return;
+
           violations.push({
             ruleId: 'security/jwt-misuse',
             severity: 'high',

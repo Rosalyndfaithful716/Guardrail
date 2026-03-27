@@ -1,14 +1,6 @@
-@import "tailwindcss";
-
-:root {
-  --bg: #0a0a0a;
-  --fg: #d4a012;
-  --fg-dim: #8a6b0a;
-  --fg-muted: #5a4a0a;
-  --white: #fafafa;
-  --border: #d4a01230;
-  --card-bg: #0f0f0f;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
   box-sizing: border-box;
@@ -21,28 +13,26 @@ html {
 }
 
 body {
-  background: var(--bg);
-  color: var(--fg);
-  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  background: #0a0a0a;
+  color: #d4a012;
+  font-family: "SF Mono", "Fira Code", "Consolas", monospace;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
 ::selection {
-  background: var(--fg);
-  color: var(--bg);
+  background: #d4a012;
+  color: #0a0a0a;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: var(--bg);
+  background: #0a0a0a;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: var(--fg-dim);
+  background: #8a6b0a;
   border-radius: 3px;
 }

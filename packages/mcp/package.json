@@ -1,12 +1,15 @@
 {
   "name": "@guardrail-ai/mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Model Context Protocol (MCP) server for Guardrail — use as a Claude Code plugin",
   "main": "dist/index.js",
   "bin": {
     "guardrail-mcp": "dist/index.js"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -17,15 +20,21 @@
   },
   "homepage": "https://github.com/Manavarya09/Guardrail",
   "bugs": "https://github.com/Manavarya09/Guardrail/issues",
-  "keywords": ["guardrail", "mcp", "claude", "claude-code", "model-context-protocol"],
+  "keywords": [
+    "guardrail",
+    "mcp",
+    "claude",
+    "claude-code",
+    "model-context-protocol"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail-ai/core": "*",
-    "@guardrail-ai/rules": "*",
-    "@guardrail-ai/fixer": "*",
+    "@guardrail-ai/core": "0.2.0",
+    "@guardrail-ai/rules": "0.2.0",
+    "@guardrail-ai/fixer": "0.2.0",
     "@modelcontextprotocol/sdk": "^1.12.1"
   },
   "license": "MIT"

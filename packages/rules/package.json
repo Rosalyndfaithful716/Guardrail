@@ -1,10 +1,13 @@
 {
   "name": "@guardrail-ai/rules",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Built-in detection rules for Guardrail (19 rules across security, performance, quality, and AI-codegen)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public"
   },
@@ -15,13 +18,18 @@
   },
   "homepage": "https://github.com/Manavarya09/Guardrail",
   "bugs": "https://github.com/Manavarya09/Guardrail/issues",
-  "keywords": ["guardrail", "security-rules", "ai-codegen", "static-analysis"],
+  "keywords": [
+    "guardrail",
+    "security-rules",
+    "ai-codegen",
+    "static-analysis"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail-ai/core": "^0.1.0",
+    "@guardrail-ai/core": "0.2.0",
     "@babel/traverse": "^7.23.6",
     "@babel/types": "^7.23.6"
   },

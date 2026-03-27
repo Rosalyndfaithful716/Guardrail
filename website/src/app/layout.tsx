@@ -4,12 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Guardrail — The safety layer for AI-generated code",
   description:
-    "Scan and fix security vulnerabilities, performance issues, and AI-specific anti-patterns. 30 rules. 7 commands. VS Code extension. Zero config.",
-  openGraph: {
-    title: "Guardrail — The safety layer for AI-generated code",
-    description: "30 detection rules. 7 CLI commands. VS Code extension. Zero config. Open source.",
-    type: "website",
-  },
+    "Scan and fix security issues, performance problems, and AI-specific anti-patterns before they ship. 22 built-in rules. AST-based auto-fix. Zero config.",
 };
 
 export default function RootLayout({

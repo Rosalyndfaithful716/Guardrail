@@ -1,353 +1,359 @@
 "use client";
 
-import { motion, useInView, animate } from "framer-motion";
-import { useRef, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
 
 const Globe = dynamic(() => import("@/components/Globe"), { ssr: false });
 
-function F({ children, className = "", d = 0 }: { children: React.ReactNode; className?: string; d?: number }) {
+// ─── Animations ──────────────────────────────────────────────────────────────
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: (i: number = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, delay: i * 0.1 },
+  }),
+};
+
+function F({
+  children,
+  className = "",
+  i = 0,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  i?: number;
+}) {
   return (
-    <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: d * 0.08 }} className={className}>
+    <motion.div
+      variants={fadeUp}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: "-40px" }}
+      custom={i}
+      className={className}
+    >
       {children}
     </motion.div>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   TYPING TERMINAL — the product IS the hero
-   ═══════════════════════════════════════════════════════════════════ */
+// ─── Data ────────────────────────────────────────────────────────────────────
 
-function TerminalHero() {
-  const [phase, setPhase] = useState(0);
-  const [cursor, setCursor] = useState(true);
-
-  useEffect(() => {
-    const blink = setInterval(() => setCursor((c) => !c), 530);
-    const timers = [
-      setTimeout(() => setPhase(1), 800),   // show command
-      setTimeout(() => setPhase(2), 1600),  // show banner
-      setTimeout(() => setPhase(3), 2200),  // show scan header
-      setTimeout(() => setPhase(4), 2800),  // show file
-      setTimeout(() => setPhase(5), 3200),  // show violation
-      setTimeout(() => setPhase(6), 3800),  // show code frame
-      setTimeout(() => setPhase(7), 4400),  // show hint
-      setTimeout(() => setPhase(8), 5000),  // show results box
-      setTimeout(() => setPhase(9), 5600),  // show menu
-    ];
-    return () => { clearInterval(blink); timers.forEach(clearTimeout); };
-  }, []);
-
-  const show = (n: number) => phase >= n;
-  const fade = "transition-opacity duration-300";
-
-  return (
-    <div className="rounded-lg border border-white/[0.08] bg-[#0a0a0a] overflow-hidden w-full max-w-[680px]">
-      {/* Chrome */}
-      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/5 bg-white/[0.02]">
-        <div className="flex gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"/>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]"/>
-          <div className="w-2.5 h-2.5 rounded-full bg-[#28c840]"/>
-        </div>
-        <span className="ml-2 text-[10px] font-mono text-white/20">~/project</span>
-      </div>
-      {/* Content */}
-      <div className="p-5 font-mono text-[11px] md:text-[12px] leading-[1.85] min-h-[380px] md:min-h-[420px]">
-        {/* Command */}
-        <div className={`text-white/70 ${fade} ${show(0) ? "opacity-100" : "opacity-0"}`}>
-          <span className="text-[#d4a012]">$</span> npx @guardrail-ai/cli scan ./src{!show(1) && <span className={`${cursor ? "opacity-100" : "opacity-0"} text-[#d4a012]`}>_</span>}
-        </div>
-
-        {/* Banner */}
-        {show(2) && <div className={`mt-3 text-[#d4a012]/60 text-[10px] leading-[1.4] ${fade}`}>
-{`   ____                     _           _ _
-  / ___|_   _  __ _ _ __ __| |_ __ __ _(_) |
- | |  _| | | |/ _\` | '__/ _\` | '__/ _\` | | |
- | |_| | |_| | (_| | | | (_| | | | (_| | | |
-  \\____|\\__,_|\\__,_|_|  \\__,_|_|  \\__,_|_|_|`}
-        </div>}
-
-        {/* Scan header */}
-        {show(3) && <div className={`mt-2 text-white/20 ${fade}`}>
-          <div>Target &nbsp;&nbsp;./src</div>
-          <div>Rules &nbsp;&nbsp;&nbsp;30 rules across 4 categories</div>
-        </div>}
-
-        {/* File header */}
-        {show(4) && <div className={`mt-3 ${fade}`}>
-          <span className="text-red-400">{"◉"}</span> <span className="text-white/80 font-semibold">src/api/auth.ts</span> <span className="text-white/20">(4 issues)</span>
-        </div>}
-
-        {/* Violation */}
-        {show(5) && <div className={`mt-2 ml-2 ${fade}`}>
-          <span className="text-red-400">{"✖"}</span> <span className="text-red-400/80 text-[10px] font-bold">CRIT</span> <span className="text-white/60">Potential SQL injection</span>
-          <div className="text-white/15 ml-4">at src/api/auth.ts:18:18</div>
-        </div>}
-
-        {/* Code frame */}
-        {show(6) && <div className={`ml-4 ${fade}`}>
-          <div><span className="text-white/10">17 │</span> <span className="text-white/20">function getUser(db, userId) {"{"}</span></div>
-          <div><span className="text-red-400">{">"}</span> <span className="text-white/10">18 │</span> <span className="text-white/60">  db.query(&quot;SELECT * FROM &quot; + userId);</span></div>
-          <div><span className="text-white/10">{"   │"}</span>           <span className="text-red-400">^^^^^^^^^^^^^^^^^^^^^^^^^</span></div>
-          <div><span className="text-white/10">19 │</span> <span className="text-white/20">{"}"}</span></div>
-        </div>}
-
-        {/* Hint */}
-        {show(7) && <div className={`ml-6 text-cyan-400/60 ${fade}`}>
-          {"↳"} Use parameterized queries: db.query(&quot;...WHERE id = $1&quot;, [id])
-        </div>}
-
-        {/* Results */}
-        {show(8) && <div className={`mt-4 ${fade}`}>
-          <div className="text-white/50"><span className="font-semibold">Health</span> &nbsp;<span className="text-[#d4a012]">{"━━━━━━━━━━━━━━"}</span><span className="text-white/10">{"╌╌╌╌╌╌╌╌╌"}</span> 62/100 <span className="text-[#d4a012]">[C]</span></div>
-          <div className="text-white/50 mt-0.5"><span className="font-semibold">Issues</span> &nbsp;<span className="text-red-400 text-[10px]">2 CRIT</span> &nbsp;<span className="text-orange-400 text-[10px]">3 HIGH</span> &nbsp;<span className="text-amber-400/50 text-[10px]">4 WARN</span></div>
-        </div>}
-
-        {/* Interactive menu */}
-        {show(9) && <div className={`mt-3 ${fade}`}>
-          <div className="text-white/30 mb-1">What would you like to do?</div>
-          <div><span className="text-cyan-400/50">[1]</span> <span className="text-white/40">Auto-fix 3 issues</span></div>
-          <div><span className="text-cyan-400/50">[2]</span> <span className="text-white/40">Generate AI fix guide</span></div>
-          <div><span className="text-cyan-400/50">[3]</span> <span className="text-white/40">Install pre-commit hook</span></div>
-          <div className="mt-1 text-cyan-400/40">{"→"} <span className={`${cursor ? "opacity-100" : "opacity-0"} text-[#d4a012]`}>_</span></div>
-        </div>}
-      </div>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════════════════ */
-
-const RULES: [string, string][] = [
-  ["security/sql-injection", "CRIT"], ["security/xss-vulnerability", "CRIT"], ["security/hardcoded-api-key", "CRIT"],
-  ["security/path-traversal", "CRIT"], ["security/jwt-misuse", "CRIT"], ["security/prototype-pollution", "HIGH"],
-  ["security/open-redirect", "HIGH"], ["security/insecure-cookie", "HIGH"],
-  ["ai-codegen/hallucinated-import", "HIGH"], ["ai-codegen/unused-imports", "WARN"],
-  ["ai-codegen/no-async-without-await", "WARN"], ["ai-codegen/placeholder-code", "WARN"],
-  ["performance/n-plus-one-query", "HIGH"], ["quality/dead-code", "WARN"],
+const FEATURES = [
+  {
+    title: "SECURITY SCANNING",
+    desc: "15 rules detecting hardcoded secrets, SQL injection, XSS, JWT misuse, path traversal, prototype pollution, and more.",
+  },
+  {
+    title: "AI-CODE DETECTION",
+    desc: "11 rules purpose-built for AI-generated patterns: hallucinated imports, placeholder code, missing error handling, async without await.",
+  },
+  {
+    title: "AST AUTO-FIX",
+    desc: "Real Abstract Syntax Tree transformations. Precise fixes with clean unified diffs. Not regex replacements.",
+  },
+  {
+    title: "AUDIT REPORTS",
+    desc: "Generate AI-guided remediation reports in Markdown with fix instructions, code examples, and copy-paste prompts for your AI assistant.",
+  },
 ];
 
-const COMPARE: [string, boolean, boolean | string, boolean, boolean][] = [
-  ["SQL injection", true, false, true, false],
-  ["XSS / innerHTML", true, "Plugin", true, false],
-  ["JWT misuse", true, false, false, false],
-  ["AI hallucinated imports", true, false, false, false],
-  ["Inline code frames", true, false, false, false],
-  ["Pre-commit hook", true, "Plugin", false, false],
-  ["Baseline / gradual adoption", true, false, false, false],
-  ["Git diff scanning", true, false, false, false],
-  ["AST auto-fix", true, false, false, false],
-  ["AI remediation report", true, false, false, false],
-  ["Zero config", true, false, false, true],
+const RULES = [
+  { id: "security/hardcoded-api-key", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/sql-injection", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/no-eval", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/xss-vulnerability", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/path-traversal", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/jwt-misuse", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/insecure-cors", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/env-var-leak", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/unsafe-regex", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/no-secrets-in-logs", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/prototype-pollution", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/open-redirect", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/insecure-cookie", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/insecure-randomness", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/no-rate-limiting", sev: "INFO", cat: "SECURITY" },
+  { id: "ai-codegen/hallucinated-import", sev: "HIGH", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/placeholder-code", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/hardcoded-localhost", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/overly-broad-catch", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/unused-imports", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/any-type-abuse", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/fetch-without-error-handling", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/promise-without-catch", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/no-async-without-await", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/console-log-spam", sev: "INFO", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/magic-numbers", sev: "INFO", cat: "AI-CODEGEN" },
+  { id: "quality/dead-code", sev: "WARN", cat: "QUALITY" },
+  { id: "quality/duplicate-logic", sev: "WARN", cat: "QUALITY" },
+  { id: "performance/inefficient-loop", sev: "WARN", cat: "PERFORMANCE" },
+  { id: "performance/n-plus-one-query", sev: "HIGH", cat: "PERFORMANCE" },
 ];
 
-const sev: Record<string, string> = { CRIT: "text-red-400", HIGH: "text-orange-400", WARN: "text-amber-500/60" };
+const SEV_COLOR: Record<string, string> = {
+  CRIT: "text-red-400",
+  HIGH: "text-orange-400",
+  WARN: "text-[#d4a012]",
+  INFO: "text-[#d4a012]/50",
+};
+
+const TRUST_WORDS = [
+  "SECURITY", "PERFORMANCE", "QUALITY", "AI-SAFETY",
+  "OPEN-SOURCE", "AST-POWERED", "ZERO-CONFIG", "PRE-COMMIT",
+  "BASELINE", "DIFF-SCAN", "CODE-FRAMES", "SARIF",
+];
+
+// ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function Page() {
-  const [copied, setCopied] = useState(false);
-  const cp = () => { navigator.clipboard?.writeText("npx @guardrail-ai/cli scan ."); setCopied(true); setTimeout(() => setCopied(false), 2000); };
-
   return (
-    <main className="bg-[#060606] text-white min-h-screen">
+    <main className="bg-[#0a0a0a] text-[#d4a012] min-h-screen">
 
-      {/* Nav */}
-      <nav className="fixed top-0 w-full z-50 bg-[#060606]/80 backdrop-blur-xl border-b border-white/5">
-        <div className="max-w-[1200px] mx-auto px-6 h-14 flex items-center justify-between">
-          <span className="text-[13px] font-bold tracking-[0.15em] uppercase text-[#d4a012]">Guardrail</span>
-          <div className="hidden md:flex items-center gap-7">
-            {["Rules", "Compare", "Integrate"].map((s) => (
-              <a key={s} href={`#${s.toLowerCase()}`} className="text-[12px] text-white/30 hover:text-white/60 transition-colors">{s}</a>
-            ))}
-            <a href="https://github.com/Manavarya09/Guardrail" target="_blank" rel="noopener noreferrer"
-              className="text-[12px] text-white/40 border border-white/8 px-3.5 py-1.5 rounded hover:border-white/15 hover:text-white/70 transition-all">GitHub</a>
+      {/* ── Nav ─────────────────────────────────────────────── */}
+      <nav className="fixed top-0 w-full z-50 border-b border-[#d4a01220] bg-[#0a0a0a]/90 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+          <span className="text-sm font-bold tracking-[0.3em] uppercase">Guardrail</span>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#about" className="text-xs tracking-widest uppercase text-[#d4a012]/60 hover:text-[#d4a012] transition-colors">About</a>
+            <a href="#rules" className="text-xs tracking-widest uppercase text-[#d4a012]/60 hover:text-[#d4a012] transition-colors">Rules</a>
+            <a href="#integrate" className="text-xs tracking-widest uppercase text-[#d4a012]/60 hover:text-[#d4a012] transition-colors">Integrate</a>
+            <a
+              href="https://github.com/Manavarya09/Guardrail"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs tracking-widest uppercase border border-[#d4a012]/40 px-4 py-1.5 hover:bg-[#d4a012] hover:text-[#0a0a0a] transition-all"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </nav>
 
-      {/* ═══ HERO — Terminal is the product ═══ */}
-      <section className="pt-28 pb-20 md:pt-36 md:pb-28 relative overflow-hidden">
-        <div className="absolute top-40 right-[-200px] w-[600px] h-[600px] bg-[#d4a012]/[0.02] rounded-full blur-[150px] pointer-events-none" />
+      {/* ── Hero ────────────────────────────────────────────── */}
+      <section className="relative min-h-screen flex items-center overflow-hidden pt-14">
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.06]"
+          style={{
+            backgroundImage: `linear-gradient(to right, #d4a012 1px, transparent 1px), linear-gradient(to bottom, #d4a012 1px, transparent 1px)`,
+            backgroundSize: "80px 80px",
+          }}
+        />
 
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="grid lg:grid-cols-[1fr_1fr] gap-12 lg:gap-16 items-start">
-            {/* Left — text */}
-            <div className="lg:pt-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
+          <div className="grid lg:grid-cols-[1fr_1fr] gap-8 items-center">
+            {/* Left */}
+            <div className="lg:pr-8">
               <F>
-                <p className="font-mono text-[11px] text-[#d4a012]/60 mb-5">open source &middot; MIT license &middot; v0.2.2</p>
-              </F>
-              <F d={1}>
-                <h1 className="text-[clamp(2.2rem,5.5vw,4rem)] font-black leading-[1] tracking-[-0.04em]">
-                  AI writes code.
-                  <br/><span className="text-[#d4a012]">We make it safe.</span>
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-black uppercase leading-[0.95] tracking-tight text-[#fafafa]">
+                  No Bad Code,
+                  <br />
+                  <span className="text-[#d4a012]">Only Safe Moves</span>
                 </h1>
               </F>
-              <F d={2}>
-                <p className="mt-5 text-[14px] text-white/35 max-w-sm leading-[1.7]">
-                  30 AST-powered rules catch SQL injection, XSS, hardcoded secrets,
-                  hallucinated imports, and 26 more patterns that ESLint and Snyk miss.
-                  Then auto-fix them.
+              <F i={1}>
+                <p className="mt-8 text-sm md:text-base text-[#d4a012]/60 max-w-lg leading-relaxed tracking-wide">
+                  We scan your AI-generated code for security vulnerabilities,
+                  performance issues, and anti-patterns — then auto-fix them.
                 </p>
               </F>
-              <F d={3}>
-                <div className="mt-7 flex items-center gap-2.5">
-                  <button onClick={cp} className="font-mono text-[12px] bg-[#d4a012] text-black px-4 py-2.5 rounded font-semibold hover:bg-[#e0ad1a] transition-colors">
-                    {copied ? "Copied to clipboard" : "$ npx @guardrail-ai/cli scan ."}
-                  </button>
-                  <a href="https://github.com/Manavarya09/Guardrail" target="_blank" rel="noopener noreferrer"
-                    className="text-[12px] text-white/30 border border-white/8 px-4 py-2.5 rounded hover:text-white/60 hover:border-white/15 transition-all">GitHub</a>
+              <F i={2}>
+                <div className="mt-10 flex flex-wrap gap-4">
+                  <a
+                    href="https://github.com/Manavarya09/Guardrail"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border border-[#d4a012] px-6 py-3 text-xs tracking-[0.2em] uppercase font-bold hover:bg-[#d4a012] hover:text-[#0a0a0a] transition-all"
+                  >
+                    Get Started
+                  </a>
+                  <a
+                    href="https://www.npmjs.com/package/@guardrail-ai/cli"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border border-[#d4a012]/30 px-6 py-3 text-xs tracking-[0.2em] uppercase font-bold text-[#d4a012]/60 hover:border-[#d4a012] hover:text-[#d4a012] transition-all"
+                  >
+                    npm Install
+                  </a>
                 </div>
               </F>
-              <F d={4}>
-                <div className="mt-12 grid grid-cols-4 gap-6 max-w-sm">
-                  {[["30", "rules"], ["7", "cmds"], ["<1s", "scan"], ["141", "tests"]].map(([n, l]) => (
-                    <div key={l}><div className="text-[20px] font-black font-mono text-[#d4a012]">{n}</div><div className="text-[10px] text-white/20">{l}</div></div>
-                  ))}
-                </div>
-              </F>
             </div>
 
-            {/* Right — live terminal */}
-            <F d={2}>
-              <TerminalHero />
+            {/* Right — Globe */}
+            <F i={3} className="h-[400px] md:h-[500px] lg:h-[600px] flex items-center justify-center">
+              <Globe />
             </F>
           </div>
         </div>
       </section>
 
-      {/* ═══ WHAT IT CATCHES ═══ */}
-      <section className="py-20 border-t border-white/5">
-        <div className="max-w-[1200px] mx-auto px-6">
-          <div className="grid md:grid-cols-[1fr_1.5fr] gap-12">
-            <F>
-              <p className="font-mono text-[10px] text-[#d4a012]/50 tracking-wider mb-3">DETECTION</p>
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
-                Patterns that<br/>linters miss.
-              </h2>
-              <p className="mt-3 text-[13px] text-white/25 leading-[1.7] max-w-xs">
-                AI models generate code that looks right but ships with real vulnerabilities.
-                We catch all of it in under a second.
-              </p>
-            </F>
-            <div className="grid grid-cols-3 gap-px bg-white/[0.04] rounded overflow-hidden">
-              {[
-                ["15", "Security", "SQL injection, XSS, JWT misuse, path traversal, prototype pollution, secrets, cookies, redirects"],
-                ["11", "AI-Codegen", "Hallucinated imports, placeholder code, async without await, unused imports, missing error handling"],
-                ["4", "Quality + Perf", "N+1 queries, inefficient loops, dead code, duplicate logic"],
-              ].map(([n, t, d], i) => (
-                <F key={t} d={i + 1}>
-                  <div className="bg-[#060606] p-6 h-full">
-                    <span className="text-[32px] font-black font-mono text-[#d4a012]/70 leading-none">{n}</span>
-                    <h3 className="mt-2 text-[13px] font-bold text-white/70">{t}</h3>
-                    <p className="mt-1.5 text-[11px] text-white/20 leading-[1.6]">{d}</p>
-                  </div>
-                </F>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ VS CODE ═══ */}
-      <section className="py-20 border-t border-white/5">
-        <div className="max-w-[1200px] mx-auto px-6 grid lg:grid-cols-[1fr_1.3fr] gap-12 items-start">
-          <div className="lg:sticky lg:top-24">
-            <F>
-              <p className="font-mono text-[10px] text-[#d4a012]/50 tracking-wider mb-3">VS CODE</p>
-              <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
-                Red squiggles on<br/>vulnerabilities.
-              </h2>
-            </F>
-            <F d={1}>
-              <p className="mt-3 text-[13px] text-white/25 leading-[1.7]">
-                Scans on save. Inline diagnostics. Quick-fix lightbulbs. Status bar severity count.
-              </p>
-              <div className="mt-6 space-y-2 text-[12px] text-white/30">
-                {["Diagnostics on save", "Auto-fix + suppress", "Workspace scan", "Configurable rules"].map((f) => (
-                  <div key={f} className="flex items-center gap-2"><span className="text-[#d4a012] text-[9px]">&#10003;</span>{f}</div>
-                ))}
-              </div>
-            </F>
-          </div>
-          <F d={1}>
-            <div className="rounded-lg border border-white/[0.06] bg-[#1e1e1e] overflow-hidden">
-              <div className="flex items-center gap-2 px-3 py-2 bg-[#2d2d2d] border-b border-white/5">
-                <div className="flex gap-1.5"><div className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"/><div className="w-2.5 h-2.5 rounded-full bg-[#febc2e]"/><div className="w-2.5 h-2.5 rounded-full bg-[#28c840]"/></div>
-                <span className="ml-2 text-[10px] font-mono text-white/20">auth.ts</span>
-                <span className="ml-auto text-[9px] text-red-400/60 font-mono">Guardrail: 3 issues</span>
-              </div>
-              <div className="p-4 font-mono text-[11px] leading-[2]">
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">12</span><span className="text-[#569cd6]">const</span> <span className="underline decoration-wavy decoration-red-500 text-white/50">API_KEY</span> <span className="text-white/30">=</span> <span className="text-[#ce9178]">&quot;sk-abc123...&quot;</span><span className="text-white/30">;</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">13</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">14</span><span className="text-[#569cd6]">function</span> <span className="text-[#dcdcaa]">getUser</span><span className="text-white/30">(db, id) {"{"}</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">15</span><span className="text-white/30">  </span><span className="text-[#c586c0]">return</span><span className="text-white/30"> db.</span><span className="text-[#dcdcaa]">query</span><span className="text-white/30">(</span><span className="underline decoration-wavy decoration-red-500 text-[#ce9178]">&quot;SELECT * FROM users WHERE id=&quot;</span><span className="text-white/30">+id);</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">16</span><span className="text-white/30">{"}"}</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">17</span></div>
-                <div><span className="text-white/10 inline-block w-6 text-right mr-3">18</span><span className="text-[#569cd6]">const</span> <span className="text-white/40">data =</span> <span className="underline decoration-wavy decoration-yellow-500 text-white/40">jwt.decode</span><span className="text-white/30">(token);</span></div>
-              </div>
-              <div className="border-t border-white/5">
-                <div className="px-3 py-1 text-[9px] text-white/20 uppercase tracking-wider border-b border-white/5">Problems (3)</div>
-                <div className="p-1 text-[10px] font-mono">
-                  <div className="flex items-center gap-2 px-2 py-0.5"><span className="text-red-400 text-[7px]">&#9679;</span><span className="text-white/35">Hardcoded secret in &quot;API_KEY&quot;</span><span className="ml-auto text-white/10">:12</span></div>
-                  <div className="flex items-center gap-2 px-2 py-0.5"><span className="text-red-400 text-[7px]">&#9679;</span><span className="text-white/35">SQL injection — use parameterized queries</span><span className="ml-auto text-white/10">:15</span></div>
-                  <div className="flex items-center gap-2 px-2 py-0.5"><span className="text-orange-400 text-[7px]">&#9679;</span><span className="text-white/35">jwt.decode() does NOT verify the token</span><span className="ml-auto text-white/10">:18</span></div>
-                </div>
-              </div>
-            </div>
-          </F>
-        </div>
-      </section>
-
-      {/* ═══ RULES ═══ */}
-      <section id="rules" className="py-20 border-t border-white/5">
-        <div className="max-w-[1000px] mx-auto px-6">
+      {/* ── Install Strip ─────────────────────────────────── */}
+      <section className="border-t border-[#d4a01220] py-16">
+        <div className="max-w-3xl mx-auto px-6 text-center">
           <F>
-            <p className="font-mono text-[10px] text-[#d4a012]/50 tracking-wider mb-3">30 RULES</p>
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-8">No plugins. No config. Just works.</h2>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-6">Quick Start</p>
           </F>
-          <F d={1}>
-            <div className="grid md:grid-cols-2 gap-x-10">
-              {RULES.map(([id, s]) => (
-                <div key={id} className="flex items-center justify-between py-2 border-b border-white/[0.03]">
-                  <span className="font-mono text-[11.5px] text-white/30">{id}</span>
-                  <span className={`font-mono text-[9px] font-bold ${sev[s]}`}>{s}</span>
-                </div>
-              ))}
+          <F i={1}>
+            <div className="flex items-center justify-center border border-[#d4a01230] bg-[#0a0a0a]">
+              <code className="flex-1 text-base md:text-lg text-[#d4a012]/80 py-5 pl-8 tracking-wide text-left">
+                $ npx @guardrail-ai/cli scan .
+              </code>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText("npx @guardrail-ai/cli scan .");
+                }}
+                className="px-6 py-5 border-l border-[#d4a01230] text-[#d4a012]/40 hover:text-[#d4a012] hover:bg-[#d4a01210] transition-all"
+                title="Copy to clipboard"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+              </button>
             </div>
-            <p className="mt-3 text-[11px] text-white/15">+16 more rules. <a href="https://github.com/Manavarya09/Guardrail#30-built-in-rules" className="text-[#d4a012]/40 hover:text-[#d4a012]">View all</a></p>
+          </F>
+          <F i={2}>
+            <div className="mt-6 flex items-center justify-center gap-8 text-[11px] tracking-[0.25em] uppercase text-[#d4a012]/30">
+              <span>30 rules</span>
+              <span className="text-[#d4a012]/15">|</span>
+              <span>7 commands</span>
+              <span className="text-[#d4a012]/15">|</span>
+              <span>inline code frames</span>
+              <span className="text-[#d4a012]/15">|</span>
+              <span>ast auto-fix</span>
+              <span className="text-[#d4a012]/15">|</span>
+              <span>zero config</span>
+            </div>
           </F>
         </div>
       </section>
 
-      {/* ═══ COMPARE ═══ */}
-      <section id="compare" className="py-20 border-t border-white/5">
-        <div className="max-w-[800px] mx-auto px-6">
+      {/* ── Features ────────────────────────────────────────── */}
+      <section className="border-t border-[#d4a01220]">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 divide-x divide-[#d4a01215]">
+          {FEATURES.map((f, i) => (
+            <F key={f.title} i={i}>
+              <div className="p-8 md:p-10 lg:p-12 h-full">
+                <h3 className="text-[11px] tracking-[0.3em] uppercase font-bold mb-4 text-[#fafafa]">
+                  {f.title}
+                </h3>
+                <p className="text-[13px] leading-[1.7] text-[#d4a012]/50">
+                  {f.desc}
+                </p>
+              </div>
+            </F>
+          ))}
+        </div>
+      </section>
+
+      {/* ── About ───────────────────────────────────────────── */}
+      <section id="about" className="border-t border-[#d4a01220] py-24 md:py-32">
+        <div className="max-w-7xl mx-auto px-6">
           <F>
-            <p className="font-mono text-[10px] text-[#d4a012]/50 tracking-wider mb-3">VS OTHERS</p>
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-8">ESLint wasn&apos;t built for AI code.</h2>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-8">/ About Guardrail</p>
           </F>
-          <F d={1}>
-            <div className="rounded border border-white/[0.06] overflow-x-auto">
-              <table className="w-full text-left min-w-[500px]">
+          <F i={1}>
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black uppercase leading-[1.1] text-[#fafafa] max-w-5xl">
+              We provide the default
+              <br />
+              safety layer for
+              <br />
+              <span className="text-[#d4a012]">AI-generated code.</span>
+            </h2>
+          </F>
+
+          <div className="grid md:grid-cols-2 gap-px mt-20 border border-[#d4a01220]">
+            <F>
+              <div className="p-10 border-b md:border-b-0 md:border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Mission</p>
+                <p className="text-sm text-[#d4a012]/60 tracking-wide leading-relaxed">
+                  To become the default guardian that prevents developers from shipping
+                  insecure or unscalable AI-generated applications. 30 rules. 4 categories.
+                  Zero configuration.
+                </p>
+              </div>
+            </F>
+            <F i={1}>
+              <div className="p-10">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Vision</p>
+                <p className="text-sm text-[#d4a012]/60 tracking-wide leading-relaxed">
+                  A world where every AI-generated line of code passes through a safety
+                  layer before it reaches production. Open source. Community driven. Built
+                  for the era of Copilot, ChatGPT, and Claude.
+                </p>
+              </div>
+            </F>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Terminal ─────────────────────────────────────────── */}
+      <section className="border-t border-[#d4a01220] py-24">
+        <div className="max-w-4xl mx-auto px-6">
+          <F>
+            <div className="border border-[#d4a01230] bg-[#0a0a0a]">
+              <div className="border-b border-[#d4a01220] px-5 py-3 flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#d4a012]/30" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#d4a012]/30" />
+                <div className="w-2.5 h-2.5 rounded-full bg-[#d4a012]/30" />
+                <span className="ml-2 text-[10px] tracking-widest uppercase text-[#d4a012]/30">terminal</span>
+              </div>
+              <pre className="p-6 text-[12px] md:text-[13px] leading-6 text-[#d4a012]/70 overflow-x-auto">
+{`$ npx @guardrail-ai/cli scan ./src
+
+   ____                     _           _ _
+  / ___|_   _  __ _ _ __ __| |_ __ __ _(_) |
+ | |  _| | | |/ _\` | '__/ _\` | '__/ _\` | | |
+ | |_| | |_| | (_| | | | (_| | | | (_| | | |
+  \\____|\\__,_|\\__,_|_|  \\__,_|_|  \\__,_|_|_|
+
+  Target: ./src
+
+src/api/auth.ts
+  `}<span className="text-red-400">CRIT</span>{`  12:6   Hardcoded secret in "API_KEY"              [security/hardcoded-api-key]
+  `}<span className="text-red-400">CRIT</span>{`  18:18  Potential SQL injection                     [security/sql-injection]
+  `}<span className="text-orange-400">HIGH</span>{`  28:2   cors() with no arguments                    [security/insecure-cors]
+  `}<span className="text-orange-400">HIGH</span>{`  35:0   Hallucinated import "auth-utils"            [ai-codegen/hallucinated-import]
+  `}<span className="text-[#d4a012]">WARN</span>{`  45:4   Sequential await inside loop                [performance/inefficient-loop]
+  `}<span className="text-[#d4a012]">WARN</span>{`  52:0   console.log() call                         [ai-codegen/console-log-spam]  `}<span className="text-green-400">(fixable)</span>{`
+
+Found 6 issues in 1 file (0.03s)
+  2 critical, 2 high, 2 warnings
+  1 issue is auto-fixable (run guardrail fix)`}
+              </pre>
+            </div>
+          </F>
+        </div>
+      </section>
+
+      {/* ── Rules ───────────────────────────────────────────── */}
+      <section id="rules" className="border-t border-[#d4a01220] py-24">
+        <div className="max-w-7xl mx-auto px-6">
+          <F>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Detection Engine</p>
+            <h2 className="text-3xl md:text-5xl font-black uppercase text-[#fafafa] mb-12">
+              30 Rules, 4 Categories
+            </h2>
+          </F>
+          <F i={1}>
+            <div className="border border-[#d4a01220] overflow-x-auto">
+              <table className="w-full text-left text-[12px]">
                 <thead>
-                  <tr className="border-b border-white/5 bg-white/[0.015]">
-                    <th className="px-3 py-2 text-[9px] text-white/20 font-normal tracking-wider uppercase">Feature</th>
-                    <th className="px-3 py-2 text-[9px] text-[#d4a012] font-semibold tracking-wider uppercase">Guardrail</th>
-                    <th className="px-3 py-2 text-[9px] text-white/20 font-normal tracking-wider uppercase">ESLint</th>
-                    <th className="px-3 py-2 text-[9px] text-white/20 font-normal tracking-wider uppercase">Sonar</th>
-                    <th className="px-3 py-2 text-[9px] text-white/20 font-normal tracking-wider uppercase">Snyk</th>
+                  <tr className="border-b border-[#d4a01220]">
+                    <th className="px-5 py-3.5 tracking-[0.2em] uppercase text-[#d4a012]/40 font-normal">Rule</th>
+                    <th className="px-5 py-3.5 tracking-[0.2em] uppercase text-[#d4a012]/40 font-normal">Category</th>
+                    <th className="px-5 py-3.5 tracking-[0.2em] uppercase text-[#d4a012]/40 font-normal">Severity</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {COMPARE.map(([f, g, e, s, n]) => (
-                    <tr key={f} className="border-b border-white/[0.025]">
-                      <td className="px-3 py-1.5 text-[11px] text-white/30">{f}</td>
-                      {[g, e, s, n].map((v, i) => (
-                        <td key={i} className="px-3 py-1.5 text-[11px]">
-                          {v === true ? <span className={i === 0 ? "text-[#d4a012]" : "text-white/25"}>&#10003;</span> : v === false ? <span className="text-white/8">&ndash;</span> : <span className="text-white/15 text-[9px]">{v}</span>}
-                        </td>
-                      ))}
+                  {RULES.map((r) => (
+                    <tr key={r.id} className="border-b border-[#d4a01210] hover:bg-[#d4a01208] transition-colors">
+                      <td className="px-5 py-2.5 text-[#fafafa]/80 font-mono">{r.id}</td>
+                      <td className="px-5 py-2.5 text-[#d4a012]/40 tracking-widest uppercase text-[11px]">{r.cat}</td>
+                      <td className={`px-5 py-2.5 font-bold tracking-widest ${SEV_COLOR[r.sev]}`}>{r.sev}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -357,58 +363,211 @@ export default function Page() {
         </div>
       </section>
 
-      {/* ═══ INTEGRATIONS ═══ */}
-      <section id="integrate" className="py-20 border-t border-white/5">
-        <div className="max-w-[1200px] mx-auto px-6">
+      {/* ── Integrate ───────────────────────────────────────── */}
+      <section id="integrate" className="border-t border-[#d4a01220] py-24">
+        <div className="max-w-7xl mx-auto px-6">
           <F>
-            <p className="font-mono text-[10px] text-[#d4a012]/50 tracking-wider mb-3">INTEGRATIONS</p>
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight mb-10">Drop in anywhere.</h2>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Integrate</p>
+            <h2 className="text-3xl md:text-5xl font-black uppercase text-[#fafafa] mb-16">
+              Works Everywhere
+            </h2>
           </F>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-2">
-            {[
-              ["CLI", "7 commands", "guardrail scan .\nguardrail fix .\nguardrail diff main\nguardrail hook install\nguardrail baseline create"],
-              ["VS Code", "extension", "Real-time squiggles.\nQuick-fix lightbulbs.\nStatus bar severity.\nZero config."],
-              ["GitHub Action", "CI/CD", "- uses: Manavarya09/Guardrail@v0.1.0\n  with:\n    target: './src'\n    fail-on: 'high'"],
-              ["Claude Code", "MCP server", '{ "mcpServers": {\n    "guardrail": {\n      "command": "npx",\n      "args": ["@guardrail-ai/mcp"]\n} } }'],
-              ["Reports", "MD / HTML / SARIF", "guardrail scan . --report md\n# AI fix guide for Claude/ChatGPT\n\nguardrail scan . --report sarif\n# GitHub Code Scanning"],
-              ["Pre-commit", "git hook", "guardrail hook install\n# blocks commits with\n# critical/high issues"],
-            ].map(([t, s, c], i) => (
-              <F key={t} d={i}>
-                <div className="rounded border border-white/[0.05] bg-white/[0.01] p-4 hover:border-white/[0.1] transition-colors h-full">
-                  <div className="flex items-baseline gap-2 mb-2.5">
-                    <span className="text-[12px] font-bold text-white/70">{t}</span>
-                    <span className="text-[9px] text-white/15">{s}</span>
-                  </div>
-                  <pre className="text-[10px] font-mono text-white/20 leading-[1.65] whitespace-pre-wrap">{c}</pre>
-                </div>
-              </F>
-            ))}
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px border border-[#d4a01220]">
+            {/* 7 Commands */}
+            <F>
+              <div className="p-8 border-b lg:border-b-0 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ 7 Commands</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60">
+{`guardrail scan .
+guardrail fix .
+guardrail diff main
+guardrail watch .
+guardrail hook install
+guardrail baseline create
+guardrail init`}
+                </pre>
+              </div>
+            </F>
+
+            {/* GitHub Action */}
+            <F i={1}>
+              <div className="p-8 border-b lg:border-b-0 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ GitHub Action</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
+{`- uses: Manavarya09/Guardrail@v0.1.0
+  with:
+    target: './src'
+    severity: 'warning'
+    fail-on: 'high'`}
+                </pre>
+              </div>
+            </F>
+
+            {/* Claude Code */}
+            <F i={2}>
+              <div className="p-8 border-b border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Claude Code (MCP)</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
+{`{
+  "mcpServers": {
+    "guardrail": {
+      "command": "npx",
+      "args": ["@guardrail-ai/mcp"]
+    }
+  }
+}`}
+                </pre>
+              </div>
+            </F>
+
+            {/* Reports */}
+            <F>
+              <div className="p-8 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Reports</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60">
+{`guardrail scan . --report md
+guardrail scan . --report html
+guardrail scan . --report sarif
+guardrail scan . --report html,md`}
+                </pre>
+              </div>
+            </F>
+
+            {/* Inline Suppression */}
+            <F i={1}>
+              <div className="p-8 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Inline Suppression</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
+{`// guardrail-ignore-next-line
+eval(trustedCode);
+
+// guardrail-ignore security/xss
+el.innerHTML = safe;`}
+                </pre>
+              </div>
+            </F>
+
+            {/* Baseline */}
+            <F i={2}>
+              <div className="p-8">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Gradual Adoption</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60">
+{`guardrail baseline create
+# snapshot current issues
+
+guardrail scan .
+# only flags NEW issues`}
+                </pre>
+              </div>
+            </F>
           </div>
         </div>
       </section>
 
-      {/* ═══ CTA ═══ */}
-      <section className="py-28 border-t border-white/5">
-        <div className="max-w-[600px] mx-auto px-6 text-center">
-          <F><h2 className="text-3xl md:text-4xl font-black tracking-tight">Stop shipping<br/><span className="text-[#d4a012]">vulnerable code.</span></h2></F>
-          <F d={1}><p className="mt-4 text-[13px] text-white/25">One command. 30 rules. Under a second. Free forever.</p></F>
-          <F d={2}>
-            <div className="mt-7 flex justify-center gap-2.5">
-              <button onClick={cp} className="font-mono text-[12px] bg-[#d4a012] text-black px-5 py-2.5 rounded font-semibold hover:bg-[#e0ad1a] transition-colors">{copied ? "Copied!" : "$ npx @guardrail-ai/cli scan ."}</button>
-              <a href="https://github.com/Manavarya09/Guardrail" target="_blank" rel="noopener noreferrer" className="text-[12px] border border-white/8 px-5 py-2.5 rounded text-white/30 hover:text-white/60 hover:border-white/15 transition-all">Star on GitHub</a>
+      {/* ── Star CTA ──────────────────────────────────────── */}
+      <section className="border-t border-[#d4a01220] py-28 md:py-36 relative overflow-hidden">
+        <div
+          className="absolute inset-0 opacity-[0.04]"
+          style={{
+            backgroundImage: `linear-gradient(to right, #d4a012 1px, transparent 1px), linear-gradient(to bottom, #d4a012 1px, transparent 1px)`,
+            backgroundSize: "80px 80px",
+          }}
+        />
+        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center">
+          <F>
+            <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-8">/ Open Source</p>
+          </F>
+          <F i={1}>
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-black uppercase text-[#fafafa] leading-[1]">
+              Built in public.
+              <br />
+              <span className="text-[#d4a012]">Backed by you.</span>
+            </h2>
+          </F>
+          <F i={2}>
+            <p className="mt-8 text-sm text-[#d4a012]/50 max-w-lg mx-auto leading-relaxed">
+              Guardrail is free, open source, and community driven. If it saves you from
+              shipping one bad line of AI-generated code, give us a star. It keeps the project alive.
+            </p>
+          </F>
+          <F i={3}>
+            <a
+              href="https://github.com/Manavarya09/Guardrail"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-10 inline-flex items-center gap-3 border-2 border-[#d4a012] px-10 py-4 text-sm tracking-[0.2em] uppercase font-bold hover:bg-[#d4a012] hover:text-[#0a0a0a] transition-all group"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="group-hover:fill-[#0a0a0a] transition-all">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              Star on GitHub
+            </a>
+          </F>
+          <F i={4}>
+            <div className="mt-12 flex justify-center gap-6 flex-wrap">
+              <a
+                href="https://www.npmjs.com/package/@guardrail-ai/cli"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] tracking-[0.2em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors"
+              >
+                npm
+              </a>
+              <span className="text-[#d4a012]/15">|</span>
+              <a
+                href="https://github.com/Manavarya09/Guardrail/blob/main/CONTRIBUTING.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] tracking-[0.2em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors"
+              >
+                Contribute
+              </a>
+              <span className="text-[#d4a012]/15">|</span>
+              <a
+                href="https://github.com/Manavarya09/Guardrail/issues"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] tracking-[0.2em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors"
+              >
+                Report Issue
+              </a>
+              <span className="text-[#d4a012]/15">|</span>
+              <a
+                href="https://github.com/Manavarya09/Guardrail/discussions"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[11px] tracking-[0.2em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors"
+              >
+                Discussions
+              </a>
             </div>
           </F>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 px-6 py-8">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
-          <span className="text-[10px] text-white/15">Guardrail &middot; MIT &middot; Open Source</span>
-          <div className="flex gap-5">
-            {[["GitHub", "https://github.com/Manavarya09/Guardrail"], ["npm", "https://www.npmjs.com/package/@guardrail-ai/cli"], ["Contribute", "https://github.com/Manavarya09/Guardrail/blob/main/CONTRIBUTING.md"]].map(([l, h]) => (
-              <a key={l} href={h} target="_blank" rel="noopener noreferrer" className="text-[10px] text-white/15 hover:text-white/40 transition-colors">{l}</a>
-            ))}
+      {/* ── Trust Bar ───────────────────────────────────────── */}
+      <section className="border-t border-[#d4a01220] py-8">
+        <div className="max-w-7xl mx-auto px-6 flex flex-wrap justify-center gap-x-10 gap-y-2">
+          {TRUST_WORDS.map((w) => (
+            <span key={w} className="text-[10px] tracking-[0.4em] uppercase text-[#d4a012]/25">
+              {w}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Footer ──────────────────────────────────────────── */}
+      <footer className="border-t border-[#d4a01220] px-6 py-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <span className="text-[10px] tracking-[0.3em] uppercase text-[#d4a012]/30">
+            Guardrail. Open source under MIT.
+          </span>
+          <div className="flex items-center gap-8">
+            <a href="https://github.com/Manavarya09/Guardrail" target="_blank" rel="noopener noreferrer" className="text-[10px] tracking-[0.3em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors">GitHub</a>
+            <a href="https://www.npmjs.com/package/@guardrail-ai/cli" target="_blank" rel="noopener noreferrer" className="text-[10px] tracking-[0.3em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors">npm</a>
+            <a href="https://github.com/Manavarya09/Guardrail/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer" className="text-[10px] tracking-[0.3em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors">Contributing</a>
+            <a href="https://github.com/Manavarya09/Guardrail/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="text-[10px] tracking-[0.3em] uppercase text-[#d4a012]/30 hover:text-[#d4a012] transition-colors">License</a>
           </div>
         </div>
       </footer>

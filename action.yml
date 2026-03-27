@@ -26,6 +26,10 @@ inputs:
     description: 'Generate report format (none, html)'
     required: false
     default: 'none'
+  sarif:
+    description: 'Upload SARIF results to GitHub Code Scanning'
+    required: false
+    default: 'true'
 
 outputs:
   total-issues:
@@ -142,3 +146,16 @@ runs:
       with:
         name: guardrail-report
         path: guardrail-report.html
+
+    - name: Generate SARIF Report
+      if: inputs.sarif == 'true'
+      shell: bash
+      run: |
+        guardrail scan ${{ inputs.target }} --severity ${{ inputs.severity }} --report sarif || true
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: inputs.sarif == 'true' && always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: guardrail.sarif
+      continue-on-error: true

@@ -6,6 +6,9 @@ import type { Violation } from './types.js';
 const CACHE_DIR = join('node_modules', '.cache', 'guardrail');
 const CACHE_FILE = 'scan-cache.json';
 
+// Bump this when rules change to auto-invalidate cache
+const CACHE_VERSION = '0.2.2';
+
 interface CacheEntry {
   hash: string;
   violations: Violation[];
@@ -27,12 +30,19 @@ export class ScanCache {
 
     if (existsSync(this.cachePath)) {
       try {
-        this.data = JSON.parse(readFileSync(this.cachePath, 'utf-8'));
+        const raw = JSON.parse(readFileSync(this.cachePath, 'utf-8'));
+        // Invalidate cache if version changed (rules updated)
+        if (raw.version !== CACHE_VERSION) {
+          this.data = { version: CACHE_VERSION, entries: {} };
+          this.dirty = true;
+        } else {
+          this.data = raw;
+        }
       } catch {
-        this.data = { version: '1', entries: {} };
+        this.data = { version: CACHE_VERSION, entries: {} };
       }
     } else {
-      this.data = { version: '1', entries: {} };
+      this.data = { version: CACHE_VERSION, entries: {} };
     }
   }
 

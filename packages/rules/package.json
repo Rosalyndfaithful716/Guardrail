@@ -1,6 +1,6 @@
 {
   "name": "@guardrail-ai/rules",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Built-in detection rules for Guardrail (19 rules across security, performance, quality, and AI-codegen)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail-ai/core": "0.2.1",
+    "@guardrail-ai/core": "0.2.2",
     "@babel/traverse": "^7.23.6",
     "@babel/types": "^7.23.6"
   },

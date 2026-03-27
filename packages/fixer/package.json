@@ -1,6 +1,6 @@
 {
   "name": "@guardrail-ai/fixer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "AST-based auto-fix engine for Guardrail",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@guardrail-ai/core": "0.2.1",
+    "@guardrail-ai/core": "0.2.2",
     "@babel/parser": "^7.23.6",
     "@babel/traverse": "^7.23.6",
     "@babel/generator": "^7.23.6",

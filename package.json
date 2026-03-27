@@ -1,6 +1,6 @@
 {
   "name": "guardrail",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Scan and fix AI-generated code for security, performance, and quality issues",
   "workspaces": [

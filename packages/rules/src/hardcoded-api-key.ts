@@ -122,23 +122,31 @@ const hardcodedApiKeyRule: Rule = {
               ? key.value
               : null;
 
-        if (
-          keyName &&
-          SUSPICIOUS_NAMES.test(keyName) &&
-          value.type === 'StringLiteral' &&
-          value.value.length >= MIN_SUSPICIOUS_LENGTH
-        ) {
-          violations.push({
-            ruleId: 'security/hardcoded-api-key',
-            severity: 'critical',
-            message: `Hardcoded secret in property "${keyName}". Use environment variables instead.`,
-            location: {
-              file: filePath,
-              line: key.loc?.start.line ?? 0,
-              column: key.loc?.start.column ?? 0,
-            },
-          });
-        }
+        if (!keyName || value.type !== 'StringLiteral') return;
+        if (value.value.length < MIN_SUSPICIOUS_LENGTH) return;
+
+        // Only flag if the key itself (not embedded in a path) matches suspicious names
+        // Skip keys that contain slashes — they're likely rule IDs, config paths, etc.
+        if (keyName.includes('/')) return;
+
+        // The key name must match suspicious patterns
+        if (!SUSPICIOUS_NAMES.test(keyName)) return;
+
+        // The value should look plausibly like a secret, not a sentence/URL/description
+        const val = value.value;
+        const looksLikeDescription = val.includes(' ') && val.split(' ').length > 3;
+        if (looksLikeDescription) return;
+
+        violations.push({
+          ruleId: 'security/hardcoded-api-key',
+          severity: 'critical',
+          message: `Hardcoded secret in property "${keyName}". Use environment variables instead.`,
+          location: {
+            file: filePath,
+            line: key.loc?.start.line ?? 0,
+            column: key.loc?.start.column ?? 0,
+          },
+        });
       },
     });
 

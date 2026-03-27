@@ -66,3 +66,15 @@ async function getUserPosts(userIds) {
   }
   return posts;
 }
+
+// AI-Codegen: Async without await
+async function getCache(key) {
+  return cache[key] || null;
+}
+
+async function formatResponse(data) {
+  return { status: "ok", data };
+}
+
+// AI-Codegen: Any type abuse (would be detected in .ts files)
+// function process(input: any): any { return input; }

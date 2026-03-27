@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import { parseSource } from './parser.js';
 import { discoverFiles } from './file-discovery.js';
+import { ScanCache } from './cache.js';
 import type {
   Rule,
   RuleContext,
@@ -15,9 +16,14 @@ import { DEFAULT_CONFIG, SEVERITY_ORDER } from './types.js';
 export class GuardrailEngine {
   private rules: Rule[] = [];
   private config: GuardrailConfig;
+  private cache: ScanCache | null = null;
 
   constructor(config: Partial<GuardrailConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
+  }
+
+  enableCache(basePath: string): void {
+    this.cache = new ScanCache(basePath);
   }
 
   registerRule(rule: Rule): void {
@@ -54,6 +60,15 @@ export class GuardrailEngine {
 
   async scanFile(filePath: string): Promise<ScanResult> {
     const source = await readFile(filePath, 'utf-8');
+
+    // Check cache first
+    if (this.cache) {
+      const cached = this.cache.get(filePath, source);
+      if (cached) {
+        return { filePath, violations: cached };
+      }
+    }
+
     const violations: Violation[] = [];
 
     let ast;
@@ -63,6 +78,9 @@ export class GuardrailEngine {
       return { filePath, violations: [] };
     }
 
+    // Parse inline ignore comments: // guardrail-ignore or // guardrail-ignore rule-id
+    const ignoreLines = this.parseIgnoreComments(source);
+
     const context: RuleContext = { filePath, source, ast };
 
     for (const rule of this.rules) {
@@ -71,13 +89,21 @@ export class GuardrailEngine {
       try {
         const ruleViolations = rule.detect(context);
         for (const v of ruleViolations) {
-          if (this.meetsThreshold(v.severity)) {
-            violations.push(v);
-          }
+          if (!this.meetsThreshold(v.severity)) continue;
+
+          // Check inline suppression
+          if (this.isSuppressed(v, ignoreLines)) continue;
+
+          violations.push(v);
         }
       } catch {
         // Rule failed — skip silently to not block other rules
       }
+    }
+
+    // Store in cache
+    if (this.cache) {
+      this.cache.set(filePath, source, violations);
     }
 
     return { filePath, violations };
@@ -113,6 +139,56 @@ export class GuardrailEngine {
       }
     }
 
+    // Save cache after full scan
+    if (this.cache) {
+      this.cache.save();
+    }
+
     return summary;
+  }
+
+  /**
+   * Parse inline suppression comments from source code.
+   * Supports:
+   *   // guardrail-ignore
+   *   // guardrail-ignore-next-line
+   *   // guardrail-ignore security/sql-injection
+   *   // guardrail-ignore-next-line security/sql-injection, security/xss-vulnerability
+   */
+  private parseIgnoreComments(source: string): Map<number, Set<string> | 'all'> {
+    const ignores = new Map<number, Set<string> | 'all'>();
+    const lines = source.split('\n');
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const match = line.match(/\/\/\s*guardrail-ignore(?:-next-line)?\s*(.*)/);
+      if (!match) continue;
+
+      const isNextLine = line.includes('guardrail-ignore-next-line');
+      const targetLine = isNextLine ? i + 2 : i + 1; // 1-indexed
+
+      const ruleList = match[1].trim();
+      if (ruleList.length === 0) {
+        ignores.set(targetLine, 'all');
+      } else {
+        const ruleIds = new Set(ruleList.split(',').map((r) => r.trim()));
+        const existing = ignores.get(targetLine);
+        if (existing === 'all') continue;
+        if (existing) {
+          for (const r of ruleIds) existing.add(r);
+        } else {
+          ignores.set(targetLine, ruleIds);
+        }
+      }
+    }
+
+    return ignores;
+  }
+
+  private isSuppressed(v: Violation, ignoreLines: Map<number, Set<string> | 'all'>): boolean {
+    const entry = ignoreLines.get(v.location.line);
+    if (!entry) return false;
+    if (entry === 'all') return true;
+    return entry.has(v.ruleId);
   }
 }

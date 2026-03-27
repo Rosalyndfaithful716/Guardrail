@@ -23,20 +23,47 @@ npx @guardrail-ai/cli scan .
 ```
 
 ```
-  Guardrail -- scanning for issues...
+   ____                     _           _ _
+  / ___|_   _  __ _ _ __ __| |_ __ __ _(_) |
+ | |  _| | | |/ _` | '__/ _` | '__/ _` | | |
+ | |_| | |_| | (_| | | | (_| | | | (_| | | |
+  \____|\__,_|\__,_|_|  \__,_|_|  \__,_|_|_|
 
-src/api/auth.ts
-   CRIT  12:6   Hardcoded secret in variable "API_KEY"        [security/hardcoded-api-key]
-   CRIT  18:18  Potential SQL injection                        [security/sql-injection]
-   HIGH  28:2   cors() called with no arguments                [security/insecure-cors]
-   HIGH  35:0   Potentially hallucinated import "auth-utils"   [ai-codegen/hallucinated-import]
-   WARN  45:4   Sequential await inside loop                   [performance/inefficient-loop]
-   WARN  52:0   console.log() call                             [ai-codegen/console-log-spam]  (fixable)
-   WARN  61:2   fetch() without error handling                 [ai-codegen/fetch-without-error-handling]
+  The safety layer for AI-generated code.
 
-Found 7 issues in 1 file (0.03s)
-  2 critical, 2 high, 3 warnings
-  1 issue is auto-fixable (run guardrail fix)
+  Target     ./src
+  Rules      30 rules across 4 categories
+  Files      12 files to scan
+  Engine     AST-powered (Babel parser)
+
+  ◉ src/api/auth.ts  (6 issues)
+  ──────────────────────────────────────────────
+    ✖  CRIT  Potential SQL injection
+      at src/api/auth.ts:18:18  security/sql-injection
+        17 │ function getUser(db, userId) {
+      > 18 │   return db.query("SELECT * FROM users WHERE id = " + userId);
+           │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        19 │ }
+      ↳ Use parameterized queries: db.query("...WHERE id = $1", [id])
+
+  ╔══════════════════════════════════════════════╗
+  ║  SCAN RESULTS                                ║
+  ╚══════════════════════════════════════════════╝
+
+  Health        ━━━━━━━━━━━━━━╌╌╌╌╌╌╌╌╌╌  62/100  [C]
+  Issues         2 CRITICAL   3 HIGH   4 WARN  = 9 total
+  Categories
+    🔒 Security      █████████████  5  (2 crit)
+    🤖 AI-Codegen    ████████       3
+    ⚡ Performance    ██             1
+
+  ┌──────────────────────────────────────────────┐
+  │  WHAT TO DO NEXT                              │
+  └──────────────────────────────────────────────┘
+
+    1. Fix critical vulnerabilities NOW
+    2. Auto-fix 3 issues: guardrail fix .
+    3. Generate fix guide: guardrail scan . --report md
 ```
 
 ---
@@ -49,20 +76,21 @@ AI code generators (Copilot, ChatGPT, Claude) are fast -- but they produce patte
 |---------|--------|-----------|------|---------------|
 | Hardcoded secrets | Plugin | Yes | No | **Yes** |
 | SQL injection | No | Yes | No | **Yes** |
-| eval() / new Function() | Plugin | Yes | No | **Yes** |
-| Unsafe regex (ReDoS) | Plugin | No | No | **Yes** |
+| XSS detection | Plugin | Yes | No | **Yes** |
+| JWT misuse | No | No | No | **Yes** |
+| Path traversal | No | Yes | No | **Yes** |
+| Prototype pollution | No | No | No | **Yes** |
 | AI-hallucinated imports | No | No | No | **Yes** |
 | Placeholder/TODO detection | No | Partial | No | **Yes** |
-| Hardcoded localhost URLs | No | No | No | **Yes** |
-| console.log auto-removal | Plugin | No | No | **Yes (auto-fix)** |
-| Unused import detection | Plugin | Yes | No | **Yes (auto-fix)** |
-| `any` type abuse in TS | Plugin | Yes | No | **Yes** |
-| Fetch without error handling | No | No | No | **Yes** |
-| Promise without .catch() | No | Partial | No | **Yes** |
+| Async without await | No | No | No | **Yes** |
 | N+1 query detection | No | No | No | **Yes** |
-| Secrets leaked in logs | No | No | No | **Yes** |
-| Insecure CORS | No | Yes | No | **Yes** |
-| Env variable leaks | No | Partial | No | **Yes** |
+| Inline code frames | No | No | No | **Yes** |
+| AI remediation report | No | No | No | **Yes** |
+| Baseline/gradual adoption | No | No | No | **Yes** |
+| Git diff scanning | No | No | No | **Yes** |
+| Pre-commit hook | Plugin | No | No | **Built-in** |
+| Inline suppression | Yes | Yes | No | **Yes** |
+| SARIF output | Plugin | Yes | Yes | **Yes** |
 | AST-based auto-fix | No | No | No | **Yes** |
 | Zero config | No | No | Yes | **Yes** |
 | < 1s scan time | No | No | N/A | **Yes** |
@@ -83,38 +111,93 @@ guardrail fix ./src
 
 # Dry-run fixes (show diffs without applying)
 guardrail fix ./src --dry-run
-
-# Watch mode
-guardrail watch ./src
-
-# Generate HTML report
-guardrail scan ./src --report html
-
-# JSON output (for CI)
-guardrail scan ./src --json
-
-# Initialize config
-guardrail init
 ```
 
 ---
 
-## 22 Built-in Rules
+## 7 Commands
 
-### Security (8 rules)
+```bash
+guardrail scan .                     # Scan for issues
+guardrail fix .                      # Auto-fix issues
+guardrail diff main                  # Scan only git-changed files (PR workflow)
+guardrail watch .                    # Real-time scanning on file changes
+guardrail hook install               # Add pre-commit git hook
+guardrail baseline create            # Snapshot issues for gradual adoption
+guardrail init                       # Initialize config file
+```
+
+### Reports
+
+```bash
+guardrail scan . --report md         # AI-guided fix report (for Claude/ChatGPT)
+guardrail scan . --report html       # Visual HTML report
+guardrail scan . --report sarif      # GitHub Code Scanning format
+guardrail scan . --report html,md    # Multiple formats at once
+guardrail scan . --json              # Machine-readable JSON
+```
+
+### Inline Suppression
+
+```javascript
+// guardrail-ignore-next-line
+eval(trustedCode);
+
+// guardrail-ignore-next-line security/sql-injection
+db.query(`SELECT * FROM ${safeTable}`);
+
+const key = process.env.KEY; // guardrail-ignore
+```
+
+### Gradual Adoption (Baseline)
+
+```bash
+guardrail baseline create   # Snapshot all current issues
+guardrail scan .             # Now only reports NEW issues
+guardrail baseline status    # See suppressed count
+guardrail baseline clear     # Enforce all rules again
+```
+
+### Pre-commit Hook
+
+```bash
+guardrail hook install       # Blocks commits with critical/high issues
+guardrail hook uninstall     # Remove the hook
+```
+
+### Diff Scanning (PR Workflow)
+
+```bash
+guardrail diff main          # Only scan files changed vs main
+guardrail diff HEAD~3        # Last 3 commits
+guardrail diff               # Staged + unstaged changes
+```
+
+---
+
+## 30 Built-in Rules
+
+### Security (15 rules)
 
 | Rule | ID | Severity | Auto-fix |
 |------|----|----------|----------|
 | Hardcoded API Key | `security/hardcoded-api-key` | critical | No |
 | SQL Injection | `security/sql-injection` | critical | No |
 | No Eval | `security/no-eval` | critical | No |
+| XSS Vulnerability | `security/xss-vulnerability` | critical | No |
+| Path Traversal | `security/path-traversal` | critical | No |
+| JWT Misuse | `security/jwt-misuse` | critical | No |
 | Insecure CORS | `security/insecure-cors` | high | No |
 | Environment Variable Leak | `security/env-var-leak` | high | No |
 | Unsafe Regex (ReDoS) | `security/unsafe-regex` | high | No |
 | No Secrets in Logs | `security/no-secrets-in-logs` | high | No |
+| Prototype Pollution | `security/prototype-pollution` | high | No |
+| Open Redirect | `security/open-redirect` | high | No |
+| Insecure Cookie | `security/insecure-cookie` | high | No |
+| Insecure Randomness | `security/insecure-randomness` | high | No |
 | No Rate Limiting | `security/no-rate-limiting` | info | No |
 
-### AI-Codegen (10 rules) -- unique to Guardrail
+### AI-Codegen (11 rules) -- unique to Guardrail
 
 | Rule | ID | Severity | Auto-fix |
 |------|----|----------|----------|
@@ -126,6 +209,7 @@ guardrail init
 | Any Type Abuse | `ai-codegen/any-type-abuse` | warning | No |
 | Fetch Without Error Handling | `ai-codegen/fetch-without-error-handling` | warning | No |
 | Promise Without Catch | `ai-codegen/promise-without-catch` | warning | No |
+| No Async Without Await | `ai-codegen/no-async-without-await` | warning | No |
 | Console Log Spam | `ai-codegen/console-log-spam` | info | Yes |
 | Magic Numbers | `ai-codegen/magic-numbers` | info | No |
 
@@ -147,22 +231,20 @@ guardrail init
 
 ## GitHub Action
 
-Add Guardrail to your CI pipeline:
-
 ```yaml
 - uses: Manavarya09/Guardrail@v0.1.0
   with:
     target: './src'
     severity: 'warning'
+    fail-on: 'high'
+    report: 'html'
 ```
 
-Issues appear as PR annotations with file and line context. Supports `fail-on`, `rules`, and `report` inputs.
+Issues appear as PR annotations with file and line context.
 
 ---
 
 ## Claude Code Plugin (MCP)
-
-Use Guardrail directly inside Claude Code as an MCP server:
 
 ```json
 {
@@ -175,13 +257,11 @@ Use Guardrail directly inside Claude Code as an MCP server:
 }
 ```
 
-This gives Claude Code three tools: `guardrail_scan`, `guardrail_fix`, and `guardrail_list_rules`.
+Tools: `guardrail_scan`, `guardrail_fix`, `guardrail_list_rules`.
 
 ---
 
 ## Configuration
-
-Create a `.guardrailrc.json` (or run `guardrail init`):
 
 ```json
 {
@@ -199,51 +279,16 @@ Also supports `.guardrailrc`, `.guardrailrc.yaml`, `guardrail.config.js`, and `p
 
 ---
 
-## Plugin System
-
-Write custom rules as npm packages:
-
-```typescript
-import type { GuardrailPlugin } from '@guardrail-ai/core';
-
-const plugin: GuardrailPlugin = {
-  name: 'my-rules',
-  rules: [{
-    id: 'custom/no-todo',
-    name: 'No TODO',
-    description: 'Disallow TODO comments in production',
-    severity: 'warning',
-    category: 'quality',
-    detect(context) {
-      // AST analysis here
-      return [];
-    },
-  }],
-};
-
-export default plugin;
-```
-
-```json
-{
-  "plugins": ["guardrail-plugin-my-rules"]
-}
-```
-
----
-
 ## Architecture
 
 ```
 packages/
-  core/       Rule engine, Babel AST parser, file discovery, caching
-  rules/      22 built-in rules across 4 categories
+  core/       Rule engine, AST parser, file discovery, caching, inline suppression
+  rules/      30 built-in rules across 4 categories
   fixer/      AST-based auto-fix engine with unified diff output
-  cli/        CLI with scan, fix, watch, init commands
+  cli/        7 commands, 3 report formats, code frames, baseline, hooks
   mcp/        Model Context Protocol server (Claude Code plugin)
 ```
-
-Pipeline: File Discovery -> Babel AST Parsing -> Rule Engine -> Reporting/Fixing
 
 ---
 
@@ -254,7 +299,7 @@ git clone https://github.com/Manavarya09/Guardrail.git
 cd Guardrail
 npm install
 npm run build
-npm test          # 88 tests
+npm test          # 139 tests
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the rule authoring guide.

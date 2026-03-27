@@ -44,15 +44,19 @@ function F({
 const FEATURES = [
   {
     title: "SECURITY SCANNING",
-    desc: "8 rules detecting hardcoded secrets, SQL injection, eval(), unsafe regex, insecure CORS, env leaks, and more.",
+    desc: "15 rules detecting hardcoded secrets, SQL injection, XSS, JWT misuse, path traversal, prototype pollution, and more.",
   },
   {
     title: "AI-CODE DETECTION",
-    desc: "10 rules purpose-built for AI-generated patterns: hallucinated imports, placeholder code, missing error handling.",
+    desc: "11 rules purpose-built for AI-generated patterns: hallucinated imports, placeholder code, missing error handling, async without await.",
   },
   {
     title: "AST AUTO-FIX",
     desc: "Real Abstract Syntax Tree transformations. Precise fixes with clean unified diffs. Not regex replacements.",
+  },
+  {
+    title: "AUDIT REPORTS",
+    desc: "Generate AI-guided remediation reports in Markdown with fix instructions, code examples, and copy-paste prompts for your AI assistant.",
   },
 ];
 
@@ -60,10 +64,17 @@ const RULES = [
   { id: "security/hardcoded-api-key", sev: "CRIT", cat: "SECURITY" },
   { id: "security/sql-injection", sev: "CRIT", cat: "SECURITY" },
   { id: "security/no-eval", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/xss-vulnerability", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/path-traversal", sev: "CRIT", cat: "SECURITY" },
+  { id: "security/jwt-misuse", sev: "CRIT", cat: "SECURITY" },
   { id: "security/insecure-cors", sev: "HIGH", cat: "SECURITY" },
   { id: "security/env-var-leak", sev: "HIGH", cat: "SECURITY" },
   { id: "security/unsafe-regex", sev: "HIGH", cat: "SECURITY" },
   { id: "security/no-secrets-in-logs", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/prototype-pollution", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/open-redirect", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/insecure-cookie", sev: "HIGH", cat: "SECURITY" },
+  { id: "security/insecure-randomness", sev: "HIGH", cat: "SECURITY" },
   { id: "security/no-rate-limiting", sev: "INFO", cat: "SECURITY" },
   { id: "ai-codegen/hallucinated-import", sev: "HIGH", cat: "AI-CODEGEN" },
   { id: "ai-codegen/placeholder-code", sev: "WARN", cat: "AI-CODEGEN" },
@@ -73,6 +84,7 @@ const RULES = [
   { id: "ai-codegen/any-type-abuse", sev: "WARN", cat: "AI-CODEGEN" },
   { id: "ai-codegen/fetch-without-error-handling", sev: "WARN", cat: "AI-CODEGEN" },
   { id: "ai-codegen/promise-without-catch", sev: "WARN", cat: "AI-CODEGEN" },
+  { id: "ai-codegen/no-async-without-await", sev: "WARN", cat: "AI-CODEGEN" },
   { id: "ai-codegen/console-log-spam", sev: "INFO", cat: "AI-CODEGEN" },
   { id: "ai-codegen/magic-numbers", sev: "INFO", cat: "AI-CODEGEN" },
   { id: "quality/dead-code", sev: "WARN", cat: "QUALITY" },
@@ -90,7 +102,8 @@ const SEV_COLOR: Record<string, string> = {
 
 const TRUST_WORDS = [
   "SECURITY", "PERFORMANCE", "QUALITY", "AI-SAFETY",
-  "OPEN-SOURCE", "AST-POWERED", "ZERO-CONFIG", "EXTENSIBLE",
+  "OPEN-SOURCE", "AST-POWERED", "ZERO-CONFIG", "PRE-COMMIT",
+  "BASELINE", "DIFF-SCAN", "CODE-FRAMES", "SARIF",
 ];
 
 // ─── Page ────────────────────────────────────────────────────────────────────
@@ -204,9 +217,11 @@ export default function Page() {
           </F>
           <F i={2}>
             <div className="mt-6 flex items-center justify-center gap-8 text-[11px] tracking-[0.25em] uppercase text-[#d4a012]/30">
-              <span>22 rules</span>
+              <span>30 rules</span>
               <span className="text-[#d4a012]/15">|</span>
-              <span>4 categories</span>
+              <span>7 commands</span>
+              <span className="text-[#d4a012]/15">|</span>
+              <span>inline code frames</span>
               <span className="text-[#d4a012]/15">|</span>
               <span>ast auto-fix</span>
               <span className="text-[#d4a012]/15">|</span>
@@ -218,7 +233,7 @@ export default function Page() {
 
       {/* ── Features ────────────────────────────────────────── */}
       <section className="border-t border-[#d4a01220]">
-        <div className="max-w-7xl mx-auto grid md:grid-cols-3 divide-x divide-[#d4a01215]">
+        <div className="max-w-7xl mx-auto grid md:grid-cols-2 lg:grid-cols-4 divide-x divide-[#d4a01215]">
           {FEATURES.map((f, i) => (
             <F key={f.title} i={i}>
               <div className="p-8 md:p-10 lg:p-12 h-full">
@@ -256,7 +271,7 @@ export default function Page() {
                 <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Mission</p>
                 <p className="text-sm text-[#d4a012]/60 tracking-wide leading-relaxed">
                   To become the default guardian that prevents developers from shipping
-                  insecure or unscalable AI-generated applications. 22 rules. 4 categories.
+                  insecure or unscalable AI-generated applications. 30 rules. 4 categories.
                   Zero configuration.
                 </p>
               </div>
@@ -320,7 +335,7 @@ Found 6 issues in 1 file (0.03s)
           <F>
             <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Detection Engine</p>
             <h2 className="text-3xl md:text-5xl font-black uppercase text-[#fafafa] mb-12">
-              22 Rules, 4 Categories
+              30 Rules, 4 Categories
             </h2>
           </F>
           <F i={1}>
@@ -358,23 +373,40 @@ Found 6 issues in 1 file (0.03s)
             </h2>
           </F>
 
-          <div className="grid md:grid-cols-2 gap-px border border-[#d4a01220]">
-            {/* GitHub Action */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px border border-[#d4a01220]">
+            {/* 7 Commands */}
             <F>
-              <div className="p-8 border-b md:border-b-0 md:border-r border-[#d4a01220]">
+              <div className="p-8 border-b lg:border-b-0 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ 7 Commands</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60">
+{`guardrail scan .
+guardrail fix .
+guardrail diff main
+guardrail watch .
+guardrail hook install
+guardrail baseline create
+guardrail init`}
+                </pre>
+              </div>
+            </F>
+
+            {/* GitHub Action */}
+            <F i={1}>
+              <div className="p-8 border-b lg:border-b-0 border-r border-[#d4a01220]">
                 <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ GitHub Action</p>
                 <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
 {`- uses: Manavarya09/Guardrail@v0.1.0
   with:
     target: './src'
-    severity: 'warning'`}
+    severity: 'warning'
+    fail-on: 'high'`}
                 </pre>
               </div>
             </F>
 
             {/* Claude Code */}
-            <F i={1}>
-              <div className="p-8 border-b md:border-b-0 border-[#d4a01220]">
+            <F i={2}>
+              <div className="p-8 border-b border-[#d4a01220]">
                 <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Claude Code (MCP)</p>
                 <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
 {`{
@@ -389,30 +421,43 @@ Found 6 issues in 1 file (0.03s)
               </div>
             </F>
 
-            {/* npm */}
+            {/* Reports */}
             <F>
               <div className="p-8 border-r border-[#d4a01220]">
-                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ npm</p>
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Reports</p>
                 <pre className="text-[12px] leading-6 text-[#d4a012]/60">
-{`npm install -g @guardrail-ai/cli
-guardrail scan ./src
-guardrail fix ./src --dry-run`}
+{`guardrail scan . --report md
+guardrail scan . --report html
+guardrail scan . --report sarif
+guardrail scan . --report html,md`}
                 </pre>
               </div>
             </F>
 
-            {/* Config */}
+            {/* Inline Suppression */}
             <F i={1}>
-              <div className="p-8">
-                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Config</p>
+              <div className="p-8 border-r border-[#d4a01220]">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Inline Suppression</p>
                 <pre className="text-[12px] leading-6 text-[#d4a012]/60 overflow-x-auto">
-{`{
-  "include": ["src/**/*.{ts,tsx}"],
-  "severityThreshold": "warning",
-  "rules": {
-    "ai-codegen/magic-numbers": false
-  }
-}`}
+{`// guardrail-ignore-next-line
+eval(trustedCode);
+
+// guardrail-ignore security/xss
+el.innerHTML = safe;`}
+                </pre>
+              </div>
+            </F>
+
+            {/* Baseline */}
+            <F i={2}>
+              <div className="p-8">
+                <p className="text-xs tracking-[0.3em] uppercase text-[#d4a012]/40 mb-4">/ Gradual Adoption</p>
+                <pre className="text-[12px] leading-6 text-[#d4a012]/60">
+{`guardrail baseline create
+# snapshot current issues
+
+guardrail scan .
+# only flags NEW issues`}
                 </pre>
               </div>
             </F>

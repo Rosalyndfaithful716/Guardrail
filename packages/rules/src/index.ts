@@ -9,6 +9,13 @@ import noRateLimitingRule from './no-rate-limiting.js';
 import unsafeRegexRule from './unsafe-regex.js';
 import noEvalRule from './no-eval.js';
 import noSecretsInLogsRule from './no-secrets-in-logs.js';
+import xssVulnerabilityRule from './xss-vulnerability.js';
+import insecureRandomnessRule from './insecure-randomness.js';
+import pathTraversalRule from './path-traversal.js';
+import prototypePollutionRule from './prototype-pollution.js';
+import jwtMisuseRule from './jwt-misuse.js';
+import openRedirectRule from './open-redirect.js';
+import insecureCookieRule from './insecure-cookie.js';
 
 // Quality
 import deadCodeRule from './dead-code.js';
@@ -29,6 +36,7 @@ import anyTypeAbuseRule from './any-type-abuse.js';
 import fetchWithoutErrorHandlingRule from './fetch-without-error-handling.js';
 import promiseWithoutCatchRule from './promise-without-catch.js';
 import magicNumbersRule from './magic-numbers.js';
+import noAsyncWithoutAwaitRule from './no-async-without-await.js';
 
 export const builtinRules: Rule[] = [
   // Security
@@ -40,6 +48,13 @@ export const builtinRules: Rule[] = [
   unsafeRegexRule,
   noEvalRule,
   noSecretsInLogsRule,
+  xssVulnerabilityRule,
+  insecureRandomnessRule,
+  pathTraversalRule,
+  prototypePollutionRule,
+  jwtMisuseRule,
+  openRedirectRule,
+  insecureCookieRule,
 
   // Quality
   deadCodeRule,
@@ -60,6 +75,7 @@ export const builtinRules: Rule[] = [
   fetchWithoutErrorHandlingRule,
   promiseWithoutCatchRule,
   magicNumbersRule,
+  noAsyncWithoutAwaitRule,
 ];
 
 export {
@@ -85,4 +101,12 @@ export {
   unsafeRegexRule,
   noEvalRule,
   noSecretsInLogsRule,
+  xssVulnerabilityRule,
+  insecureRandomnessRule,
+  pathTraversalRule,
+  prototypePollutionRule,
+  jwtMisuseRule,
+  openRedirectRule,
+  insecureCookieRule,
+  noAsyncWithoutAwaitRule,
 };

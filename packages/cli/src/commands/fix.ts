@@ -1,4 +1,4 @@
-import { resolve } from 'path';
+import { resolve, relative } from 'path';
 import { GuardrailEngine, loadConfig, mergeConfigs } from '@guardrail-ai/core';
 import type { Severity } from '@guardrail-ai/core';
 import { builtinRules } from '@guardrail-ai/rules';
@@ -21,8 +21,17 @@ export async function fixCommand(
   const targetPath = resolve(cwd, target);
 
   printBanner();
-  console.log(c.dim(options.dryRun ? '  Mode: dry-run (no changes applied)' : '  Mode: applying fixes...'));
-  console.log(c.dim(`  Target: ${targetPath}`));
+
+  const line = c.dim('  ──────────────────────────────────────────────────────────');
+  console.log(line);
+  if (options.dryRun) {
+    console.log(`  ${c.bold('Mode')}       ${c.yellow('Dry run')} ${c.dim('— preview changes without writing')}`);
+  } else {
+    console.log(`  ${c.bold('Mode')}       ${c.brightGreen('Apply fixes')} ${c.dim('— writing changes to disk')}`);
+  }
+  console.log(`  ${c.bold('Target')}     ${c.white(targetPath)}`);
+  console.log(`  ${c.bold('Engine')}     AST-powered transforms ${c.dim('(not regex)')}`);
+  console.log(line);
   console.log('');
 
   const fileConfig = loadConfig(targetPath);
@@ -43,6 +52,7 @@ export async function fixCommand(
 
   const fixer = new FixerEngine();
   let totalFixed = 0;
+  let totalSkipped = 0;
   let totalFiles = 0;
 
   for (const result of summary.results) {
@@ -58,25 +68,50 @@ export async function fixCommand(
     if (fixResult.applied > 0) {
       totalFiles++;
       totalFixed += fixResult.applied;
+      totalSkipped += fixResult.skipped;
+
+      const relPath = relative(cwd, result.filePath);
+      console.log(`  ${c.brightGreen('✓')} ${c.bold(c.white(relPath))} ${c.dim('—')} ${c.brightGreen(`${fixResult.applied} fixed`)}${fixResult.skipped > 0 ? c.dim(`, ${fixResult.skipped} skipped`) : ''}`);
 
       if (fixResult.diff) {
+        console.log('');
         console.log(formatDiff(fixResult.diff));
+        console.log('');
       }
     }
   }
 
+  // Summary
+  console.log(c.cyan(`  ╔${'══════════════════════════════════════════════════════════'}╗`));
+  console.log(c.cyan(`  ║`) + c.bold(c.white('  FIX RESULTS                                              ')) + c.cyan('║'));
+  console.log(c.cyan(`  ╚${'══════════════════════════════════════════════════════════'}╝`));
   console.log('');
+
   if (totalFixed === 0) {
-    console.log(c.dim('  No auto-fixable issues found.'));
+    console.log(`  ${c.dim('No auto-fixable issues found.')}`);
+
+    if (summary.totalViolations > 0) {
+      console.log('');
+      console.log(`  ${c.yellow('●')} ${summary.totalViolations} issues require manual fixes.`);
+      console.log(`    ${c.dim('$')} ${c.white('guardrail scan . --report md')}  ${c.dim('# get a fix guide for your AI')}`);
+    }
   } else {
-    const action = options.dryRun ? 'would fix' : 'fixed';
+    const action = options.dryRun ? 'would be fixed' : 'fixed';
     console.log(
-      c.bold(
-        c.green(
-          `  ${totalFixed} issues ${action} across ${totalFiles} files`,
-        ),
-      ),
+      `  ${c.brightGreen('✓')} ${c.bold(c.brightGreen(`${totalFixed} issues ${action}`))} across ${totalFiles} file${totalFiles > 1 ? 's' : ''}`,
     );
+
+    const remaining = summary.totalViolations - totalFixed;
+    if (remaining > 0) {
+      console.log(`  ${c.yellow('●')} ${remaining} remaining issues need manual attention`);
+      console.log(`    ${c.dim('$')} ${c.white('guardrail scan . --report md')}  ${c.dim('# generates a fix guide')}`);
+    }
+
+    if (options.dryRun) {
+      console.log('');
+      console.log(`  ${c.cyan('↳')} Run without ${c.bold('--dry-run')} to apply: ${c.white('guardrail fix .')}`);
+    }
   }
+
   console.log('');
 }

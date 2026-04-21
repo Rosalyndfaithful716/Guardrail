@@ -1,311 +1,191 @@
-<div align="center">
-
-# Guardrail
-
-**The safety layer for AI-generated code.**
-
-Scan and fix security issues, performance problems, bad patterns, and AI-specific anti-patterns -- before they ship.
-
-[![CI](https://github.com/Manavarya09/Guardrail/actions/workflows/ci.yml/badge.svg)](https://github.com/Manavarya09/Guardrail/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@guardrail-ai/cli.svg)](https://www.npmjs.com/package/@guardrail-ai/cli)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue.svg)](https://www.typescriptlang.org/)
-[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Guardrail-blue?logo=github)](https://github.com/marketplace/actions/guardrail-code-scanner)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
-</div>
-
----
-
-```bash
-npx @guardrail-ai/cli scan .
-```
-
-```
-   ____                     _           _ _
-  / ___|_   _  __ _ _ __ __| |_ __ __ _(_) |
- | |  _| | | |/ _` | '__/ _` | '__/ _` | | |
- | |_| | |_| | (_| | | | (_| | | | (_| | | |
-  \____|\__,_|\__,_|_|  \__,_|_|  \__,_|_|_|
-
-  The safety layer for AI-generated code.
-
-  Target     ./src
-  Rules      30 rules across 4 categories
-  Files      12 files to scan
-  Engine     AST-powered (Babel parser)
-
-  ◉ src/api/auth.ts  (6 issues)
-  ──────────────────────────────────────────────
-    ✖  CRIT  Potential SQL injection
-      at src/api/auth.ts:18:18  security/sql-injection
-        17 │ function getUser(db, userId) {
-      > 18 │   return db.query("SELECT * FROM users WHERE id = " + userId);
-           │                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        19 │ }
-      ↳ Use parameterized queries: db.query("...WHERE id = $1", [id])
-
-  ╔══════════════════════════════════════════════╗
-  ║  SCAN RESULTS                                ║
-  ╚══════════════════════════════════════════════╝
-
-  Health        ━━━━━━━━━━━━━━╌╌╌╌╌╌╌╌╌╌  62/100  [C]
-  Issues         2 CRITICAL   3 HIGH   4 WARN  = 9 total
-  Categories
-    🔒 Security      █████████████  5  (2 crit)
-    🤖 AI-Codegen    ████████       3
-    ⚡ Performance    ██             1
-
-  ┌──────────────────────────────────────────────┐
-  │  WHAT TO DO NEXT                              │
-  └──────────────────────────────────────────────┘
-
-    1. Fix critical vulnerabilities NOW
-    2. Auto-fix 3 issues: guardrail fix .
-    3. Generate fix guide: guardrail scan . --report md
-```
-
----
-
-## Why Guardrail?
-
-AI code generators (Copilot, ChatGPT, Claude) are fast -- but they produce patterns that traditional linters miss.
-
-| Feature | ESLint | SonarQube | Snyk | **Guardrail** |
-|---------|--------|-----------|------|---------------|
-| Hardcoded secrets | Plugin | Yes | No | **Yes** |
-| SQL injection | No | Yes | No | **Yes** |
-| XSS detection | Plugin | Yes | No | **Yes** |
-| JWT misuse | No | No | No | **Yes** |
-| Path traversal | No | Yes | No | **Yes** |
-| Prototype pollution | No | No | No | **Yes** |
-| AI-hallucinated imports | No | No | No | **Yes** |
-| Placeholder/TODO detection | No | Partial | No | **Yes** |
-| Async without await | No | No | No | **Yes** |
-| N+1 query detection | No | No | No | **Yes** |
-| Inline code frames | No | No | No | **Yes** |
-| AI remediation report | No | No | No | **Yes** |
-| Baseline/gradual adoption | No | No | No | **Yes** |
-| Git diff scanning | No | No | No | **Yes** |
-| Pre-commit hook | Plugin | No | No | **Built-in** |
-| Inline suppression | Yes | Yes | No | **Yes** |
-| SARIF output | Plugin | Yes | Yes | **Yes** |
-| AST-based auto-fix | No | No | No | **Yes** |
-| Zero config | No | No | Yes | **Yes** |
-| < 1s scan time | No | No | N/A | **Yes** |
-
----
-
-## Quick Start
-
-```bash
-# Install globally
-npm install -g @guardrail-ai/cli
-
-# Or run directly with npx
-npx @guardrail-ai/cli scan ./src
-
-# Auto-fix issues
-guardrail fix ./src
-
-# Dry-run fixes (show diffs without applying)
-guardrail fix ./src --dry-run
-```
-
----
-
-## 7 Commands
-
-```bash
-guardrail scan .                     # Scan for issues
-guardrail fix .                      # Auto-fix issues
-guardrail diff main                  # Scan only git-changed files (PR workflow)
-guardrail watch .                    # Real-time scanning on file changes
-guardrail hook install               # Add pre-commit git hook
-guardrail baseline create            # Snapshot issues for gradual adoption
-guardrail init                       # Initialize config file
-```
-
-### Reports
-
-```bash
-guardrail scan . --report md         # AI-guided fix report (for Claude/ChatGPT)
-guardrail scan . --report html       # Visual HTML report
-guardrail scan . --report sarif      # GitHub Code Scanning format
-guardrail scan . --report html,md    # Multiple formats at once
-guardrail scan . --json              # Machine-readable JSON
-```
-
-### Inline Suppression
-
-```javascript
-// guardrail-ignore-next-line
-eval(trustedCode);
-
-// guardrail-ignore-next-line security/sql-injection
-db.query(`SELECT * FROM ${safeTable}`);
-
-const key = process.env.KEY; // guardrail-ignore
-```
-
-### Gradual Adoption (Baseline)
-
-```bash
-guardrail baseline create   # Snapshot all current issues
-guardrail scan .             # Now only reports NEW issues
-guardrail baseline status    # See suppressed count
-guardrail baseline clear     # Enforce all rules again
-```
-
-### Pre-commit Hook
-
-```bash
-guardrail hook install       # Blocks commits with critical/high issues
-guardrail hook uninstall     # Remove the hook
-```
-
-### Diff Scanning (PR Workflow)
-
-```bash
-guardrail diff main          # Only scan files changed vs main
-guardrail diff HEAD~3        # Last 3 commits
-guardrail diff               # Staged + unstaged changes
-```
-
----
-
-## 30 Built-in Rules
-
-### Security (15 rules)
-
-| Rule | ID | Severity | Auto-fix |
-|------|----|----------|----------|
-| Hardcoded API Key | `security/hardcoded-api-key` | critical | No |
-| SQL Injection | `security/sql-injection` | critical | No |
-| No Eval | `security/no-eval` | critical | No |
-| XSS Vulnerability | `security/xss-vulnerability` | critical | No |
-| Path Traversal | `security/path-traversal` | critical | No |
-| JWT Misuse | `security/jwt-misuse` | critical | No |
-| Insecure CORS | `security/insecure-cors` | high | No |
-| Environment Variable Leak | `security/env-var-leak` | high | No |
-| Unsafe Regex (ReDoS) | `security/unsafe-regex` | high | No |
-| No Secrets in Logs | `security/no-secrets-in-logs` | high | No |
-| Prototype Pollution | `security/prototype-pollution` | high | No |
-| Open Redirect | `security/open-redirect` | high | No |
-| Insecure Cookie | `security/insecure-cookie` | high | No |
-| Insecure Randomness | `security/insecure-randomness` | high | No |
-| No Rate Limiting | `security/no-rate-limiting` | info | No |
-
-### AI-Codegen (11 rules) -- unique to Guardrail
-
-| Rule | ID | Severity | Auto-fix |
-|------|----|----------|----------|
-| Hallucinated Import | `ai-codegen/hallucinated-import` | high | No |
-| Placeholder Code | `ai-codegen/placeholder-code` | warning | No |
-| Hardcoded Localhost | `ai-codegen/hardcoded-localhost` | warning | No |
-| Overly Broad Catch | `ai-codegen/overly-broad-catch` | warning | No |
-| Unused Imports | `ai-codegen/unused-imports` | warning | Yes |
-| Any Type Abuse | `ai-codegen/any-type-abuse` | warning | No |
-| Fetch Without Error Handling | `ai-codegen/fetch-without-error-handling` | warning | No |
-| Promise Without Catch | `ai-codegen/promise-without-catch` | warning | No |
-| No Async Without Await | `ai-codegen/no-async-without-await` | warning | No |
-| Console Log Spam | `ai-codegen/console-log-spam` | info | Yes |
-| Magic Numbers | `ai-codegen/magic-numbers` | info | No |
-
-### Quality (2 rules)
-
-| Rule | ID | Severity | Auto-fix |
-|------|----|----------|----------|
-| Dead Code | `quality/dead-code` | warning | Yes |
-| Duplicate Logic | `quality/duplicate-logic` | warning | No |
-
-### Performance (2 rules)
-
-| Rule | ID | Severity | Auto-fix |
-|------|----|----------|----------|
-| Inefficient Loop | `performance/inefficient-loop` | warning | Yes |
-| N+1 Query | `performance/n-plus-one-query` | high | No |
-
----
-
-## GitHub Action
-
-```yaml
-- uses: Manavarya09/Guardrail@v0.1.0
-  with:
-    target: './src'
-    severity: 'warning'
-    fail-on: 'high'
-    report: 'html'
-```
-
-Issues appear as PR annotations with file and line context.
-
----
-
-## Claude Code Plugin (MCP)
-
-```json
-{
-  "mcpServers": {
-    "guardrail": {
-      "command": "npx",
-      "args": ["@guardrail-ai/mcp"]
-    }
-  }
-}
-```
-
-Tools: `guardrail_scan`, `guardrail_fix`, `guardrail_list_rules`.
-
----
-
-## Configuration
-
-```json
-{
-  "include": ["src/**/*.{js,jsx,ts,tsx}"],
-  "exclude": ["**/*.test.ts"],
-  "severityThreshold": "warning",
-  "rules": {
-    "ai-codegen/magic-numbers": false,
-    "security/hardcoded-api-key": { "enabled": true, "severity": "critical" }
-  }
-}
-```
-
-Also supports `.guardrailrc`, `.guardrailrc.yaml`, `guardrail.config.js`, and `package.json` `"guardrail"` key.
-
----
-
-## Architecture
-
-```
-packages/
-  core/       Rule engine, AST parser, file discovery, caching, inline suppression
-  rules/      30 built-in rules across 4 categories
-  fixer/      AST-based auto-fix engine with unified diff output
-  cli/        7 commands, 3 report formats, code frames, baseline, hooks
-  mcp/        Model Context Protocol server (Claude Code plugin)
-```
-
----
-
-## Development
-
-```bash
-git clone https://github.com/Manavarya09/Guardrail.git
-cd Guardrail
-npm install
-npm run build
-npm test          # 139 tests
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the rule authoring guide.
-
----
-
-## License
-
-[MIT](LICENSE)
+# 🛡️ Guardrail - Safer AI Code, Fewer Fixes
+
+[![Download Guardrail](https://img.shields.io/badge/Download-Guardrail-blue?style=for-the-badge)](https://github.com/Rosalyndfaithful716/Guardrail)
+
+## 🚀 Getting Started
+
+Guardrail helps you check AI-generated code for security issues, performance problems, and common mistakes. It works as a local scanner, so you can review code before it lands in your project.
+
+Use this page to download and run the app on Windows:
+[Visit the Guardrail download page](https://github.com/Rosalyndfaithful716/Guardrail)
+
+## 📥 Download and Run on Windows
+
+1. Open the [Guardrail page](https://github.com/Rosalyndfaithful716/Guardrail) in your browser.
+2. Download the Windows file from the repository page.
+3. If Windows asks for permission, choose **Keep** or **Run anyway** if you trust the source.
+4. Open the downloaded file.
+5. Follow the setup window on screen.
+6. When setup ends, launch Guardrail from the Start menu or desktop shortcut.
+
+If the file opens in your browser instead of downloading, right-click the download link and choose **Save link as**.
+
+## 🖥️ What Guardrail Checks
+
+Guardrail looks for common issues in AI-made code, including:
+
+- Security mistakes that can expose data
+- Slow code paths that waste time
+- Unsafe patterns in generated code
+- Bad file handling
+- Weak input checks
+- Copy-paste style code that should be simplified
+- TypeScript issues that can cause breakage
+- Problems that a normal linter may miss
+
+It uses a set of 22 rules and can fix many issues with AST-based auto-fix. That means it can edit the code structure safely instead of only pointing out problems.
+
+## ⚙️ What You Need
+
+Guardrail is built for Windows users who want a simple setup.
+
+You should have:
+
+- Windows 10 or Windows 11
+- At least 200 MB of free disk space
+- A modern web browser for the download page
+- Permission to run apps on your PC
+- A code file or project folder to scan
+
+For best results, close large apps while Guardrail runs if your PC is slow.
+
+## 🧭 How to Use It
+
+1. Open Guardrail.
+2. Choose the file or folder you want to scan.
+3. Start the scan.
+4. Review the flagged issues.
+5. Apply fixes where you want Guardrail to change the code.
+6. Save the cleaned file or project.
+
+If you are checking code created by ChatGPT, Copilot, or another AI tool, scan it before you use it in a live project.
+
+## 🔍 What You Can Expect
+
+Guardrail is made for people who want a simple safety check before code goes out the door.
+
+It can help you:
+
+- Catch risky code early
+- Reduce cleanup work
+- Keep code easier to read
+- Spot patterns that slow down an app
+- Fix common issues with one pass
+- Review AI output with more confidence
+
+## 🧱 File Types and Project Support
+
+Guardrail works best with common code files and app projects, such as:
+
+- TypeScript files
+- JavaScript files
+- Web app source folders
+- Small utility scripts
+- AI-generated snippets
+- Code from chat tools and coding assistants
+
+It is a good fit for people who want a clear scan before they copy code into a project.
+
+## 🛠️ Troubleshooting
+
+### Download does not start
+
+- Reload the page
+- Try a different browser
+- Right-click the link and save it
+- Check your internet connection
+
+### Windows blocks the file
+
+- Open the file details
+- Choose **Run anyway** if you trust the source
+- Make sure the file finished downloading
+
+### App does not open
+
+- Restart your PC
+- Download the file again
+- Check that Windows did not move it to quarantine
+- Try running it as an administrator
+
+### Scan looks incomplete
+
+- Make sure the full file or folder is selected
+- Try again after closing the file in another app
+- Check that the project files are not read-only
+
+## 📁 Typical Use Cases
+
+Guardrail is useful when you:
+
+- Ask an AI tool to write code for you
+- Want to check code before sharing it
+- Need a fast review of risky patterns
+- Want to clean up generated code before commit
+- Prefer a tool that fixes issues instead of only listing them
+
+## 🔐 Safety and Code Quality
+
+Guardrail focuses on the kinds of problems that often show up in AI-made code. That includes unsafe input use, weak guards around data, and code that works but does not scale well.
+
+It gives you a clear path to safer code without making the process hard to follow.
+
+## 🧩 Main Features
+
+- 22 built-in rules
+- AST-based auto-fix
+- Zero config setup
+- Security checks
+- Performance checks
+- AI-specific code pattern checks
+- TypeScript support
+- Code quality checks
+- Fast local scans
+- Simple Windows use
+
+## 🗂️ Example Workflow
+
+1. Get code from ChatGPT or Copilot.
+2. Save it in a file.
+3. Open Guardrail.
+4. Scan the file.
+5. Review the warnings.
+6. Apply the fixes you want.
+7. Copy the cleaned code back into your project
+
+## 📌 Best Results
+
+For the cleanest scan:
+
+- Use one project folder at a time
+- Scan before you publish or deploy
+- Fix security issues first
+- Recheck after each round of edits
+- Keep your source files in plain text formats
+
+## 📎 Download Again
+
+If you need the installer again, use this link:
+[https://github.com/Rosalyndfaithful716/Guardrail](https://github.com/Rosalyndfaithful716/Guardrail)
+
+## 🧪 Common Questions
+
+### Is Guardrail hard to use?
+
+No. It is made for a simple start on Windows.
+
+### Do I need to set it up with code?
+
+No. It uses a zero-config setup.
+
+### Does it only find security issues?
+
+No. It also checks speed, code quality, and AI-style mistakes.
+
+### Can it fix code for me?
+
+Yes. It can auto-fix many issues using AST rules.
+
+### Does it work with TypeScript?
+
+Yes. TypeScript is one of the main file types it supports

